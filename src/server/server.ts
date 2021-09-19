@@ -1,19 +1,18 @@
 const express = require("express")();
 const http = require("http").createServer(express);
+//const io = require("socket.io")(http);
 
 export class SoccerServer{
-    public app = express();
-    public server = http.Server(this.app);
-    public readonly PORT = 8080;
+    public readonly PORT = 8081;
 
     public constructor(){
         // Serving the dist folder as http root.
-        this.app.use(express.static(__dirname + '/dist'));
+        http.use(express.static(__dirname + '/dist'));
         // Serving static files
-        this.app.get('/', this.serveStaticFile);
+        http.get('/', this.serveStaticFile);
         
-        this.server.listen(this.PORT, () => {
-          console.log(`Listening on ${this.server.address().port}`);
+        http.listen(this.PORT, () => {
+          console.log(`Listening on ${http.address().port}`);
         });
     }
 

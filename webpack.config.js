@@ -1,6 +1,7 @@
 const path = require('path');
 const {CleanWebpackPlugin} = require('clean-webpack-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
+//const NodePolyfillPlugin = require("node-polyfill-webpack-plugin");
 
 module.exports = {
   entry: './src/index.ts',
@@ -39,5 +40,6 @@ module.exports = {
         {from: '**/*.json', context: 'src/assets/maps', to: 'assets/maps'}
       ],
     }),
+    //new NodePolyfillPlugin(),
   ],
 };

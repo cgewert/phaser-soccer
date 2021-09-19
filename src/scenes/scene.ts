@@ -1,6 +1,6 @@
 import * as PHASER from "phaser";
 import * as DAT from "dat.gui";
-import {SoccerServer} from "../server/server"
+import { SoccerServer } from "../server/server"
 import { Player } from "../player";
 import { Ball } from "../ball";
 
@@ -30,7 +30,7 @@ export class Scene extends PHASER.Scene {
 	}
 
 	public preload() {
-		const server = new SoccerServer();
+		//const server = new SoccerServer();
 		this.physics.world.setBounds(0, 0, 2048, 1024);
 		// Load tilemap image
 		this.load.image("tiles1", "assets/gfx/tiles/Grassland.png");
@@ -61,14 +61,14 @@ export class Scene extends PHASER.Scene {
 		this.createPlayerAnims();
 		this.initializeBall();
 
-		this.debugText = this.add.text(25, 25, `Player position: ${this.players}`);
+		this.debugText = this.add.text(25, 25, `Player position: ${this.players[0]?.position}`);
 		this.debugText.setScrollFactor(0).setDisplaySize(200, 60);
 		this.debugText.setColor("#9d03fc");
 
 		/*
 		 *  Create player objects and configure layer collision behaviour.
 		 */
-		for(let i=0;i<2;i++){
+		for(let i = 0; i < 2; i++){
 			let xOffset = 50*i;
 			let newPlayerPhysics = this.physics.add.sprite(xOffset + 16 * 64, 7 * 64, "character", i*10);
 			let newPlayer = new Player(newPlayerPhysics)
@@ -115,10 +115,29 @@ export class Scene extends PHASER.Scene {
 	createDatGUI() {
 		const folderPlayer = this.dat.addFolder("Player");
 		const folderBall = this.dat.addFolder("Ball");
+		let counter = 0;
 
 		for(let player of this.players){
-			folderPlayer.add(player.sprite, "x", 0, 2000, 1);
-			folderPlayer.add(player.sprite, "y", 0, 2000, 1);
+			let newPlayerFolder = null;
+			do{
+				try{
+					if(counter > 0){
+						newPlayerFolder = folderPlayer.addFolder(`${player.name}${counter}`);
+					}
+					else{
+						newPlayerFolder = folderPlayer.addFolder(`${player.name}`);
+					}
+					break;
+				}
+				catch(exc: unknown){
+					counter++;
+				}
+			}
+			while(true)
+
+			newPlayerFolder.add(player.sprite, "x", 0, 2000, 1);
+			newPlayerFolder.add(player.sprite, "y", 0, 2000, 1);
+			newPlayerFolder.add(player, "speed", -1000, 2000, 1);
 		}
 
 		folderBall.add(this.ball.sprite, "x", 0, 3000, 1);
