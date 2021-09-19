@@ -1,5 +1,8 @@
 import * as PHASER from "phaser";
 import * as DAT from "dat.gui";
+import { SoccerServer } from "../server/server"
+import { Player } from "../player";
+import { Ball } from "../ball";
 
 export class Scene extends PHASER.Scene {
 	private static CONFIG: Phaser.Types.Scenes.SettingsConfig = {
@@ -15,33 +18,29 @@ export class Scene extends PHASER.Scene {
 
 	private camera!: PHASER.Cameras.Scene2D.Camera;
 	private keyboard!: PHASER.Types.Input.Keyboard.CursorKeys;
-	private shoot: any;
-	private player!: PHASER.Types.Physics.Arcade.SpriteWithDynamicBody;
-	private playerHasBall = false;
-	private ball!: PHASER.Types.Physics.Arcade.SpriteWithDynamicBody;
-	private debugText: any;
+	private keyShoot!: PHASER.Input.Keyboard.Key;
+	private players: Player[];
+	private ball!: Ball;
+	private debugText: PHASER.GameObjects.Text | null = null;
 	private dat = new DAT.GUI({ name: "Soccer debug GUI" });
-	private playerBallOverlap?: PHASER.Physics.Arcade.Collider;
 
 	constructor() {
 		super(Scene.CONFIG);
+		this.players = [];
 	}
 
 	public preload() {
+		//const server = new SoccerServer();
 		this.physics.world.setBounds(0, 0, 2048, 1024);
 		// Load tilemap image
 		this.load.image("tiles1", "assets/gfx/tiles/Grassland.png");
 		this.load.image("ball", "assets/gfx/ball.png");
 		// Load map file
 		this.load.tilemapTiledJSON("level", "assets/maps/soccer.json");
-		this.load.spritesheet(
-			"character",
-			"assets/gfx/character/character.png",
-			{
-				frameWidth: 48,
-				frameHeight: 64,
-			},
-		);
+		this.load.spritesheet("character", "assets/gfx/character/character.png", {
+			frameWidth: 48,
+			frameHeight: 64,
+		});
 	}
 
 	public create() {
@@ -59,94 +58,41 @@ export class Scene extends PHASER.Scene {
 		layerDecor.skipCull = false;
 		layerGoals.skipCull = false;
 
-		this.anims.create({
-			key: "walk_down",
-			frames: this.anims.generateFrameNumbers("character", {
-				frames: [0, 1, 2],
-			}),
-			frameRate: 8,
-			repeat: -1,
-		});
-
-		this.anims.create({
-			key: "walk_up",
-			frames: this.anims.generateFrameNumbers("character", {
-				frames: [18, 19, 20],
-			}),
-			frameRate: 8,
-			repeat: -1,
-		});
-
-		this.anims.create({
-			key: "walk_left",
-			frames: this.anims.generateFrameNumbers("character", {
-				frames: [6, 7, 8],
-			}),
-			frameRate: 8,
-			repeat: -1,
-		});
-
-		this.anims.create({
-			key: "walk_right",
-			frames: this.anims.generateFrameNumbers("character", {
-				frames: [12, 13, 14],
-			}),
-			frameRate: 8,
-			repeat: -1,
-		});
-
-		/*
-		 *  Create player object and configure layer collision behaviour.
-		 */
-		this.player = this.physics.add
-			.sprite(16 * 64, 7 * 64, "character", 0)
-			.setScale(1.5);
-		this.player.setCollideWorldBounds(true);
+		this.createPlayerAnims();
 		this.initializeBall();
 
-		// this.player.setCollideWorldBounds(); TODO: Fix wrong world bounds
-		this.debugText = this.add.text(
-			25,
-			25,
-			`Player position: ${this.player.x}, ${this.player.y}`,
-		);
-		this.debugText.setScrollFactor(0).setDisplaySize(200, 60); // HUD Text
+		this.debugText = this.add.text(25, 25, `Player position: ${this.players[0]?.position}`);
+		this.debugText.setScrollFactor(0).setDisplaySize(200, 60);
 		this.debugText.setColor("#9d03fc");
-		//this.player.setSize(32, 32, false);
-		//this.player.setPosition(this.player.x, this.player.y - this.player.body.heightInPixels);
-		this.physics.add.collider(this.player, layerGoals);
-		this.playerBallOverlap = this.physics.add.overlap(
-			this.player,
-			this.ball,
-			() => {
-				this.playerHasBall = true;
-				this.playerBallOverlap!.active = false;
-			},
-		);
-		this.physics.add.collider(layerGoals, this.ball);
+
+		/*
+		 *  Create player objects and configure layer collision behaviour.
+		 */
+		for(let i = 0; i < 2; i++){
+			let xOffset = 50*i;
+			let newPlayerPhysics = this.physics.add.sprite(xOffset + 16 * 64, 7 * 64, "character", i*10);
+			let newPlayer = new Player(newPlayerPhysics)
+			newPlayerPhysics.setScale(1.5);
+			newPlayerPhysics.setSize(newPlayerPhysics.width - 20, newPlayerPhysics.height - 10);
+			newPlayerPhysics.setCollideWorldBounds(true);
+			this.physics.add.collider(newPlayerPhysics, layerGoals);
+			this.players.push(newPlayer);
+			this.physics.add.overlap(newPlayerPhysics, this.ball.sprite, () =>{
+				this.ball.setOwner(newPlayer);
+			})
+		}
+
+		this.physics.add.collider(layerGoals, this.ball.sprite);
 
 		this.camera = this.cameras.main;
 		this.camera.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
-		this.camera.startFollow(this.player);
-		//this.camera.setZoom(1.5, 1.5);
+		this.camera.startFollow(this.players[0].sprite);
+		this.camera.setRoundPixels(true);
 
 		this.keyboard = this.input.keyboard.createCursorKeys();
-		this.shoot = this.input.keyboard.addKey(
+		this.keyShoot = this.input.keyboard.addKey(
 			Phaser.Input.Keyboard.KeyCodes.SPACE,
 		);
-
-		this.keyboard.left.on("down", () => {
-			this.player.play("walk_left");
-		});
-		this.keyboard.right.on("down", () => {
-			this.player.play("walk_right");
-		});
-		this.keyboard.up.on("down", () => {
-			this.player.play("walk_up");
-		});
-		this.keyboard.down.on("down", () => {
-			this.player.play("walk_down");
-		});
 
 		this.createDatGUI();
 	}
@@ -156,151 +102,176 @@ export class Scene extends PHASER.Scene {
 	 * @param time - Overall time in ms since game started.
 	 * @param delta - Time in ms since last update call.
 	 */
-	public update(_time: number, _delta: number) {
-		this.player.setVelocity(0);
-		const velocity = 300;
+	public update(_time: number, delta: number) {
+		let xMovement = Number(this.keyboard.right.isDown) - Number(this.keyboard.left.isDown);
+		let yMovement = Number(this.keyboard.down.isDown) - Number(this.keyboard.up.isDown);
+		let direction = new PHASER.Math.Vector2(xMovement, yMovement).normalize().scale(delta);
 
-		if (
-			this.keyboard.left.isUp &&
-			this.keyboard.right.isUp &&
-			this.keyboard.down.isUp &&
-			this.keyboard.up.isUp
-		) {
-			this.player.stop();
-		}
-		if (this.keyboard.left.isDown) {
-			this.player.setVelocityX(-velocity);
-		}
-		if (this.keyboard.right.isDown) {
-			this.player.setVelocityX(velocity);
-		}
-		if (this.keyboard.down.isDown) {
-			this.player.setVelocityY(velocity);
-		}
-		if (this.keyboard.up.isDown) {
-			this.player.setVelocityY(-velocity);
-		}
+		this.players[0].move(direction);
 
-		if (this.playerHasBall) {
-			this.ball.setPosition(this.player.x, this.player.y + 32);
-		}
-
-		if (this.playerHasBall && this.shoot.isDown) {
-			this.ball.setAcceleration(600, 0);
-		}
-
-		if (
-			this.playerHasBall &&
-			!this.physics.overlap(this.player, this.ball)
-		) {
-			this.playerHasBall = false;
-			this.playerBallOverlap!.active = true;
-		}
-
-		this.debugText.setText(
-			`Player position: ${Math.ceil(this.player.x / 64)}, ${Math.ceil(
-				this.player.y / 64,
-			)}`,
-		);
+		this.ball.updatePosition()
 	}
+
 	createDatGUI() {
-		console.log("Creating DAT Gui");
 		const folderPlayer = this.dat.addFolder("Player");
 		const folderBall = this.dat.addFolder("Ball");
-		folderPlayer.add(this.player, "x", 0, 2000, 1);
-		folderPlayer.add(this.player, "y", 0, 2000, 1);
+		let counter = 0;
 
-		folderBall.add(this.ball, "x", 0, 3000, 1);
-		folderBall.add(this.ball, "y", 0, 3000, 1);
-		folderBall.add(this.ball, "scale", 0.0, 3.0, 0.01);
+		for(let player of this.players){
+			let newPlayerFolder = null;
+			do{
+				try{
+					if(counter > 0){
+						newPlayerFolder = folderPlayer.addFolder(`${player.name}${counter}`);
+					}
+					else{
+						newPlayerFolder = folderPlayer.addFolder(`${player.name}`);
+					}
+					break;
+				}
+				catch(exc: unknown){
+					counter++;
+				}
+			}
+			while(true)
+
+			newPlayerFolder.add(player.sprite, "x", 0, 2000, 1);
+			newPlayerFolder.add(player.sprite, "y", 0, 2000, 1);
+			newPlayerFolder.add(player, "speed", -1000, 2000, 1);
+		}
+
+		folderBall.add(this.ball.sprite, "x", 0, 3000, 1);
+		folderBall.add(this.ball.sprite, "y", 0, 3000, 1);
+		folderBall.add(this.ball.sprite, "scale", 0.0, 3.0, 0.01);
 		this.createVectorGui(
-			folderBall,
-			"Acceleration",
-			this.ball.body.acceleration,
-			-600,
-			600,
-			10,
+			folderBall, "Acceleration", this.ball.sprite.body.acceleration,
+			-600, 600, 10,
 		);
 		this.createVectorGui(
-			folderBall,
-			"Bounce",
-			this.ball.body.bounce,
-			0,
-			1,
-			0.1,
+			folderBall, "Bounce", this.ball.sprite.body.bounce,
+			0, 1, 0.1
 		);
 		this.createVectorGui(
-			folderBall,
-			"deltaMax",
-			this.ball.body.deltaMax,
-			0,
-			60,
-			1,
+			folderBall, "deltaMax", this.ball.sprite.body.deltaMax,
+			0, 60, 1,
 		);
 		this.createVectorGui(
-			folderBall,
-			"drag",
-			this.ball.body.drag,
-			0,
-			60,
-			0.1,
+			folderBall, "drag", this.ball.sprite.body.drag,
+			0, 60, 0.1,
 		);
 		this.createVectorGui(
 			folderBall,
 			"friction",
-			this.ball.body.friction,
+			this.ball.sprite.body.friction,
 			0,
 			1,
 			0.05,
 		);
-		this.createVectorGui(
-			folderBall,
-			"gravity",
-			this.ball.body.gravity,
-			-600,
-			600,
-			10,
+		this.createVectorGui(folderBall, "gravity", this.ball.sprite.body.gravity,
+			-600, 600, 10
 		);
-		this.createVectorGui(
-			folderBall,
-			"maxVelocity",
-			this.ball.body.maxVelocity,
-			0,
-			10000,
-			100,
+		this.createVectorGui(folderBall, "maxVelocity", this.ball.sprite.body.maxVelocity,
+			0, 10000, 100
 		);
-		this.createVectorGui(
-			folderBall,
-			"velocity",
-			this.ball.body.velocity,
-			-600,
-			600,
-			10,
+		this.createVectorGui(folderBall, "velocity", this.ball.sprite.body.velocity,
+			-600, 600, 10
 		);
 	}
 
-	createVectorGui(
-		folder: dat.GUI,
-		name: string,
-		vector: PHASER.Math.Vector2,
-		min: number,
-		max: number,
-		step: number,
-	) {
+	createVectorGui(folder: dat.GUI, name: string, vector: PHASER.Math.Vector2,
+					min: number, max: number, step: number) {
 		const subFolder = folder.addFolder(name);
 		subFolder.add(vector, "x", min, max, step);
 		subFolder.add(vector, "y", min, max, step);
 	}
 
+	createPlayerAnims(){
+		this.anims.create({
+			key: "walk_down1",
+			frames: this.anims.generateFrameNumbers("character", {
+				frames: [0, 1, 2],
+			}),
+			frameRate: 8,
+			repeat: -1,
+		});
+
+		this.anims.create({
+			key: "walk_down2",
+			frames: this.anims.generateFrameNumbers("character", {
+				frames: [3, 4, 5],
+			}),
+			frameRate: 8,
+			repeat: -1,
+		});
+
+		this.anims.create({
+			key: "walk_up1",
+			frames: this.anims.generateFrameNumbers("character", {
+				frames: [18, 19, 20],
+			}),
+			frameRate: 8,
+			repeat: -1,
+		});
+
+		this.anims.create({
+			key: "walk_up2",
+			frames: this.anims.generateFrameNumbers("character", {
+				frames: [21, 22, 23],
+			}),
+			frameRate: 8,
+			repeat: -1,
+		});
+
+		this.anims.create({
+			key: "walk_left1",
+			frames: this.anims.generateFrameNumbers("character", {
+				frames: [6, 7, 8],
+			}),
+			frameRate: 8,
+			repeat: -1,
+		});
+
+		this.anims.create({
+			key: "walk_left2",
+			frames: this.anims.generateFrameNumbers("character", {
+				frames: [9, 10, 11],
+			}),
+			frameRate: 8,
+			repeat: -1,
+		});
+
+		this.anims.create({
+			key: "walk_right1",
+			frames: this.anims.generateFrameNumbers("character", {
+				frames: [12, 13, 14],
+			}),
+			frameRate: 8,
+			repeat: -1,
+		});
+
+		this.anims.create({
+			key: "walk_right2",
+			frames: this.anims.generateFrameNumbers("character", {
+				frames: [15, 16, 17],
+			}),
+			frameRate: 8,
+			repeat: -1,
+		});
+	}
+
 	/* Initializes a physics body and its properties. */
 	initializeBall() {
-		this.ball = this.physics.add
-			.sprite(16 * 64 - 10, 7 * 64, "ball", 0)
-			.setScale(0.2);
-		this.ball.body.setFriction(1, 1);
-		this.ball.body.setBounce(0.5, 0.5);
-		this.ball.body.setCollideWorldBounds(true);
-		this.ball.body.setCircle(117);
-		this.ball.body.debugShowVelocity = true;
+		let newBall = this.physics.add.sprite(-50 + 16 * 64 - 10, 7 * 64, "ball", 0)
+			.setScale(0.13);
+		newBall.body.setFriction(1, 1);
+		newBall.body.setBounce(0.5, 0.5);
+		newBall.body.setCollideWorldBounds(true);
+		newBall.body.setCircle(117);
+		newBall.body.debugShowVelocity = true;
+		this.ball = new Ball(newBall);
+	}
+
+	shoot(player: PHASER.Types.Physics.Arcade.SpriteWithDynamicBody) {
+		// TODO : Implement logic.
 	}
 }
