@@ -1,5 +1,7 @@
 import * as PHASER from "phaser";
 import * as DAT from "dat.gui";
+import { Player } from "../player";
+import { Ball } from "../ball";
 
 export class Scene extends PHASER.Scene {
 	private static CONFIG: Phaser.Types.Scenes.SettingsConfig = {
@@ -16,18 +18,14 @@ export class Scene extends PHASER.Scene {
 	private camera!: PHASER.Cameras.Scene2D.Camera;
 	private keyboard!: PHASER.Types.Input.Keyboard.CursorKeys;
 	private keyShoot!: PHASER.Input.Keyboard.Key;
-	private player1!: PHASER.Types.Physics.Arcade.SpriteWithDynamicBody;
-	private player2!: PHASER.Types.Physics.Arcade.SpriteWithDynamicBody;
-	private playerHasBall1 = false;
-	private playerHasBall2 = false;
-	private ball!: PHASER.Types.Physics.Arcade.SpriteWithDynamicBody;
+	private players: Player[];
+	private ball!: Ball;
 	private debugText: PHASER.GameObjects.Text | null = null;
 	private dat = new DAT.GUI({ name: "Soccer debug GUI" });
-	private playerBallOverlap1?: PHASER.Physics.Arcade.Collider;
-	private playerBallOverlap2?: PHASER.Physics.Arcade.Collider;
 
 	constructor() {
 		super(Scene.CONFIG);
+		this.players = [];
 	}
 
 	public preload() {
@@ -58,65 +56,41 @@ export class Scene extends PHASER.Scene {
 		layerDecor.skipCull = false;
 		layerGoals.skipCull = false;
 
-		/*
-		 *  Create player objects and configure layer collision behaviour.
-		 */
-		this.player1 = this.physics.add.sprite(16 * 64, 7 * 64, "character", 0);
-		this.player1.setScale(1.5);
-		this.player1.setSize(this.player1.width - 20, this.player1.height - 10);
-		this.player1.setCollideWorldBounds(true);
-
-		this.player2 = this.physics.add.sprite(18 * 64, 7 * 64, "character", 10);
-		this.player2.setScale(1.5);
-		this.player2.setSize(this.player2.width - 20, this.player2.height - 10);
-		this.player2.setCollideWorldBounds(true);
-
 		this.createPlayerAnims();
-
 		this.initializeBall();
 
-		this.debugText = this.add.text(25, 25, `Player position: ${this.player1.x}, ${this.player1.y}`);
+		this.debugText = this.add.text(25, 25, `Player position: ${this.players}`);
 		this.debugText.setScrollFactor(0).setDisplaySize(200, 60);
 		this.debugText.setColor("#9d03fc");
 
-		this.physics.add.collider(this.player1, layerGoals);
-		this.physics.add.collider(this.player2, layerGoals);
-		this.playerBallOverlap1 = this.physics.add.overlap(this.player1, this.ball, () => {
-			this.playerHasBall1 = true;
-			this.playerHasBall2 = false;
-			this.playerBallOverlap1!.active = false;
-			this.playerBallOverlap2!.active = false;
-		});
-		this.playerBallOverlap2 = this.physics.add.overlap(this.player2, this.ball, () => {
-			this.playerHasBall1 = false;
-			this.playerHasBall2 = true;
-			this.playerBallOverlap1!.active = false;
-			this.playerBallOverlap2!.active = false;
-		});
-		this.physics.add.collider(layerGoals, this.ball);
+		/*
+		 *  Create player objects and configure layer collision behaviour.
+		 */
+		for(let i=0;i<2;i++){
+			let xOffset = 50*i;
+			let newPlayerPhysics = this.physics.add.sprite(xOffset + 16 * 64, 7 * 64, "character", i*10);
+			let newPlayer = new Player(newPlayerPhysics)
+			newPlayerPhysics.setScale(1.5);
+			newPlayerPhysics.setSize(newPlayerPhysics.width - 20, newPlayerPhysics.height - 10);
+			newPlayerPhysics.setCollideWorldBounds(true);
+			this.physics.add.collider(newPlayerPhysics, layerGoals);
+			this.players.push(newPlayer);
+			this.physics.add.overlap(newPlayerPhysics, this.ball.sprite, () =>{
+				this.ball.setOwner(newPlayer);
+			})
+		}
+
+		this.physics.add.collider(layerGoals, this.ball.sprite);
 
 		this.camera = this.cameras.main;
 		this.camera.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
-		this.camera.startFollow(this.player1);
+		this.camera.startFollow(this.players[0].sprite);
 		this.camera.setRoundPixels(true);
 
 		this.keyboard = this.input.keyboard.createCursorKeys();
 		this.keyShoot = this.input.keyboard.addKey(
 			Phaser.Input.Keyboard.KeyCodes.SPACE,
 		);
-
-		this.keyboard.left.on("down", () => {
-			this.player1.play("walk_left1");
-		});
-		this.keyboard.right.on("down", () => {
-			this.player1.play("walk_right1");
-		});
-		this.keyboard.up.on("down", () => {
-			this.player1.play("walk_up1");
-		});
-		this.keyboard.down.on("down", () => {
-			this.player1.play("walk_down1");
-		});
 
 		this.createDatGUI();
 	}
@@ -126,92 +100,59 @@ export class Scene extends PHASER.Scene {
 	 * @param time - Overall time in ms since game started.
 	 * @param delta - Time in ms since last update call.
 	 */
-	public update(_time: number, _delta: number) {
-		this.player1.setVelocity(0);
-		const velocity = 300;
+	public update(_time: number, delta: number) {
+		let xMovement = Number(this.keyboard.right.isDown) - Number(this.keyboard.left.isDown);
+		let yMovement = Number(this.keyboard.down.isDown) - Number(this.keyboard.up.isDown);
+		let direction = new PHASER.Math.Vector2(xMovement, yMovement).normalize().scale(delta);
 
-		if (
-			this.keyboard.left.isUp &&
-			this.keyboard.right.isUp &&
-			this.keyboard.down.isUp &&
-			this.keyboard.up.isUp
-		) {
-			this.player1.stop();
-		}
-		if (this.keyboard.left.isDown) {
-			this.player1.setVelocityX(-velocity);
-		}
-		if (this.keyboard.right.isDown) {
-			this.player1.setVelocityX(velocity);
-		}
-		if (this.keyboard.down.isDown) {
-			this.player1.setVelocityY(velocity);
-		}
-		if (this.keyboard.up.isDown) {
-			this.player1.setVelocityY(-velocity);
-		}
+		this.players[0].move(direction);
 
-		if (this.playerHasBall1) {
-			this.updateBallPosition(this.player1);
-		}
-		if (this.playerHasBall2) {
-			this.updateBallPosition(this.player2);
-		}
-
-		if (this.playerHasBall1 && this.keyShoot.isDown) {
-			this.ball.setAcceleration(600, 0);
-		}
-
-		/*if (this.playerHasBall1 && !this.physics.overlap(this.player1, this.ball)) {
-			this.playerHasBall1 = false;
-			this.playerBallOverlap1!.active = true;
-		}*/
-
-		this.debugText?.setText(
-			`Player overlaps ball: ${this.physics.overlap(this.player1, this.ball)}`
-		);
+		this.ball.updatePosition()
 	}
+
 	createDatGUI() {
-		console.log("Creating DAT Gui");
 		const folderPlayer = this.dat.addFolder("Player");
 		const folderBall = this.dat.addFolder("Ball");
-		folderPlayer.add(this.player1, "x", 0, 2000, 1);
-		folderPlayer.add(this.player1, "y", 0, 2000, 1);
 
-		folderBall.add(this.ball, "x", 0, 3000, 1);
-		folderBall.add(this.ball, "y", 0, 3000, 1);
-		folderBall.add(this.ball, "scale", 0.0, 3.0, 0.01);
+		for(let player of this.players){
+			folderPlayer.add(player.sprite, "x", 0, 2000, 1);
+			folderPlayer.add(player.sprite, "y", 0, 2000, 1);
+		}
+
+		folderBall.add(this.ball.sprite, "x", 0, 3000, 1);
+		folderBall.add(this.ball.sprite, "y", 0, 3000, 1);
+		folderBall.add(this.ball.sprite, "scale", 0.0, 3.0, 0.01);
 		this.createVectorGui(
-			folderBall, "Acceleration", this.ball.body.acceleration,
+			folderBall, "Acceleration", this.ball.sprite.body.acceleration,
 			-600, 600, 10,
 		);
 		this.createVectorGui(
-			folderBall, "Bounce", this.ball.body.bounce,
+			folderBall, "Bounce", this.ball.sprite.body.bounce,
 			0, 1, 0.1
 		);
 		this.createVectorGui(
-			folderBall, "deltaMax", this.ball.body.deltaMax,
+			folderBall, "deltaMax", this.ball.sprite.body.deltaMax,
 			0, 60, 1,
 		);
 		this.createVectorGui(
-			folderBall, "drag", this.ball.body.drag,
+			folderBall, "drag", this.ball.sprite.body.drag,
 			0, 60, 0.1,
 		);
 		this.createVectorGui(
 			folderBall,
 			"friction",
-			this.ball.body.friction,
+			this.ball.sprite.body.friction,
 			0,
 			1,
 			0.05,
 		);
-		this.createVectorGui(folderBall, "gravity", this.ball.body.gravity,
+		this.createVectorGui(folderBall, "gravity", this.ball.sprite.body.gravity,
 			-600, 600, 10
 		);
-		this.createVectorGui(folderBall, "maxVelocity", this.ball.body.maxVelocity,
+		this.createVectorGui(folderBall, "maxVelocity", this.ball.sprite.body.maxVelocity,
 			0, 10000, 100
 		);
-		this.createVectorGui(folderBall, "velocity", this.ball.body.velocity,
+		this.createVectorGui(folderBall, "velocity", this.ball.sprite.body.velocity,
 			-600, 600, 10
 		);
 	}
@@ -299,19 +240,14 @@ export class Scene extends PHASER.Scene {
 
 	/* Initializes a physics body and its properties. */
 	initializeBall() {
-		this.ball = this.physics.add.sprite(16 * 64 - 10, 7 * 64, "ball", 0)
+		let newBall = this.physics.add.sprite(-50 + 16 * 64 - 10, 7 * 64, "ball", 0)
 			.setScale(0.13);
-		this.ball.body.setFriction(1, 1);
-		this.ball.body.setBounce(0.5, 0.5);
-		this.ball.body.setCollideWorldBounds(true);
-		this.ball.body.setCircle(117);
-		this.ball.body.debugShowVelocity = true;
-	}
-
-	updateBallPosition(player: PHASER.Types.Physics.Arcade.SpriteWithDynamicBody) {
-		const moveVector = player.body.velocity.normalize();
-		this.ball.x = player.x + (32 * moveVector.x);
-		this.ball.y = player.y + (64 * moveVector.y);
+		newBall.body.setFriction(1, 1);
+		newBall.body.setBounce(0.5, 0.5);
+		newBall.body.setCollideWorldBounds(true);
+		newBall.body.setCircle(117);
+		newBall.body.debugShowVelocity = true;
+		this.ball = new Ball(newBall);
 	}
 
 	shoot(player: PHASER.Types.Physics.Arcade.SpriteWithDynamicBody) {
