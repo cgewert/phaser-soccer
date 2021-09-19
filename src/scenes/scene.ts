@@ -1,5 +1,6 @@
 import * as PHASER from "phaser";
 import * as DAT from "dat.gui";
+import {SoccerServer} from "../server/server"
 import { Player } from "../player";
 import { Ball } from "../ball";
 
@@ -29,6 +30,7 @@ export class Scene extends PHASER.Scene {
 	}
 
 	public preload() {
+		const server = new SoccerServer();
 		this.physics.world.setBounds(0, 0, 2048, 1024);
 		// Load tilemap image
 		this.load.image("tiles1", "assets/gfx/tiles/Grassland.png");
