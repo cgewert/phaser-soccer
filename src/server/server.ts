@@ -1,23 +1,30 @@
-const express = require("express")();
-const http = require("http").createServer(express);
-//const io = require("socket.io")(http);
+import * as http from 'http';
+import * as ws from 'websocket';
 
 export class SoccerServer{
-    public readonly PORT = 8081;
+    public readonly PORT = 8888;
+    private wsServer: ws.server | null = null;
+    private server: any = null;
 
     public constructor(){
-        // Serving the dist folder as http root.
-        http.use(express.static(__dirname + '/dist'));
-        // Serving static files
-        http.get('/', this.serveStaticFile);
-        
-        http.listen(this.PORT, () => {
-          console.log(`Listening on ${http.address().port}`);
+        this.server = http.createServer((request: any, response: any) => {
+            console.log((new Date()) + ' Received request for ' + request.url);
+            response.writeHead(404);
+            response.end();
         });
-    }
+        /*this.server = http.createServer((request, response) => {
+            console.log((new Date()) + ' Received request for ' + request.url);
+            response.writeHead(404);
+            response.end();
+        });*/
+        this.server.listen(this.PORT, () => {
+            console.log((new Date()) + ' Server is listening on port 8080');
+        });
 
-    private serveStaticFile(req: any, resp: any){
-        console.log("GET REQUEST: ", req);
-        resp.sendFile(__dirname + '/index.html');
+        this.wsServer = new ws.server({
+            httpServer: this.server,
+            keepalive: true,
+            autoAcceptConnections: false
+        });
     }
 }
