@@ -1,13 +1,15 @@
 import * as PHASER from "phaser";
+import { DebugGameObject } from "./base/debug-game-object";
 import { Player } from "./player";
 
-export class Ball {
-    private owner: Player|undefined;
+export class Ball extends DebugGameObject {
+    private owner: Player | undefined;
 
-    public constructor(public sprite: PHASER.Types.Physics.Arcade.SpriteWithDynamicBody) {
+    public constructor(scene: PHASER.Scene, public sprite: PHASER.Types.Physics.Arcade.SpriteWithDynamicBody) {
+        super(scene);
     }
 
-    public setOwner(owner: Player|undefined){
+    public setOwner(owner: Player | undefined){
         this.owner = owner;
     }
 

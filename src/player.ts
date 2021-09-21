@@ -1,5 +1,9 @@
 import * as PHASER from "phaser";
+import { DebugGameObject } from "./base/debug-game-object";
 
+/*
+ *  Describing all possible player animations.
+ */
 const enum PlayerAnimations{
     right = "walk_right1",
     left = "walk_left1",
@@ -10,7 +14,7 @@ const enum PlayerAnimations{
 /**
  * Class representing individual player instances.
  */
-export class Player {
+export class Player extends DebugGameObject {
     private _name: string;
     private _speed = 25;    // Determines players velocity on all axis.
     private facingDirection: PHASER.Math.Vector2;
@@ -36,7 +40,9 @@ export class Player {
        return null;
    }
 
-    public constructor(public sprite: PHASER.Types.Physics.Arcade.SpriteWithDynamicBody, name="Sir Knumskull") {
+    public constructor(scene: PHASER.Scene, public sprite: PHASER.Types.Physics.Arcade.SpriteWithDynamicBody, 
+                       name="Sir Knumskull") {
+        super(scene);
         this.facingDirection = new PHASER.Math.Vector2(0,0);
         this._name = name;
     }
@@ -76,6 +82,14 @@ export class Player {
         if(this.sprite.anims.getName() != newAnimation && newAnimation){
             this.sprite.play(newAnimation);
         }
+    }
+
+    public get PositionX(){
+        return this?.sprite.x;
+    }
+
+    public get PositionY(){
+        return this?.sprite.y;
     }
 
     public position(): PHASER.Math.Vector2 {

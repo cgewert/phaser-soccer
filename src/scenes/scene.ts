@@ -1,6 +1,6 @@
 import * as PHASER from "phaser";
 import * as DAT from "dat.gui";
-import { SoccerServer } from "../server/server"
+//import { SoccerServer } from "../server/server"
 import { Player } from "../player";
 import { Ball } from "../ball";
 
@@ -21,8 +21,9 @@ export class Scene extends PHASER.Scene {
 	private keyShoot!: PHASER.Input.Keyboard.Key;
 	private players: Player[];
 	private ball!: Ball;
-	private debugText: PHASER.GameObjects.Text | null = null;
+	private debugTexts: PHASER.GameObjects.Text[] = [];
 	private dat = new DAT.GUI({ name: "Soccer debug GUI" });
+	private development = true;
 
 	constructor() {
 		super(Scene.CONFIG);
@@ -30,12 +31,10 @@ export class Scene extends PHASER.Scene {
 	}
 
 	public preload() {
-		const server = new SoccerServer();
+		//const server = new SoccerServer();
 		this.physics.world.setBounds(0, 0, 2048, 1024);
-		// Load tilemap image
 		this.load.image("tiles1", "assets/gfx/tiles/Grassland.png");
 		this.load.image("ball", "assets/gfx/ball.png");
-		// Load map file
 		this.load.tilemapTiledJSON("level", "assets/maps/soccer.json");
 		this.load.spritesheet("character", "assets/gfx/character/character.png", {
 			frameWidth: 48,
@@ -61,17 +60,13 @@ export class Scene extends PHASER.Scene {
 		this.createPlayerAnims();
 		this.initializeBall();
 
-		this.debugText = this.add.text(25, 25, `Player position: ${this.players[0]?.position}`);
-		this.debugText.setScrollFactor(0).setDisplaySize(200, 60);
-		this.debugText.setColor("#9d03fc");
-
 		/*
 		 *  Create player objects and configure layer collision behaviour.
 		 */
 		for(let i = 0; i < 2; i++){
 			let xOffset = 50*i;
 			let newPlayerPhysics = this.physics.add.sprite(xOffset + 16 * 64, 7 * 64, "character", i*10);
-			let newPlayer = new Player(newPlayerPhysics)
+			let newPlayer = new Player(this, newPlayerPhysics)
 			newPlayerPhysics.setScale(1.5);
 			newPlayerPhysics.setSize(newPlayerPhysics.width - 20, newPlayerPhysics.height - 10);
 			newPlayerPhysics.setCollideWorldBounds(true);
@@ -79,8 +74,13 @@ export class Scene extends PHASER.Scene {
 			this.players.push(newPlayer);
 			this.physics.add.overlap(newPlayerPhysics, this.ball.sprite, () =>{
 				this.ball.setOwner(newPlayer);
-			})
+			});
 		}
+		for (const player of this.players){
+			player.debugText = `Player position: ${player?.PositionX}, ${player?.PositionY}`;
+		}
+
+		this.createDebugTexts();
 
 		this.physics.add.collider(layerGoals, this.ball.sprite);
 
@@ -95,6 +95,40 @@ export class Scene extends PHASER.Scene {
 		);
 
 		this.createDatGUI();
+	}
+
+	/*
+	 *	Iterates all DebugGameObjects and initializes 
+	 *  GameOject instances.
+	 */
+	createDebugTexts() {
+		if(!this.development){ 
+			this.players.map((player: Player) => {
+				player.textVisible = false;
+			}); 
+			this.ball.textVisible = false;
+			return;
+		}
+
+		this.players[0].name = "PLAYER1";
+		this.players[1].name = "PLAYER2";
+		
+		// Initialize custom debug texts.	
+		for (const player of this.players){
+			player.debugText = player.name + ": " + player.debugText;
+			player.scrollFactor.x = 0;
+			player.scrollFactor.y = 0;
+		}
+		this.players[1].textPositionX = 1000;
+		this.players[1].textPositionY = 100;
+		this.ball.scrollFactor.x = 0;
+		this.ball.scrollFactor.y = 0;
+		this.ball.textPositionX = 500;
+		this.ball.textPositionY = 250;
+		this.ball.textSize.width = 500;
+		this.ball.textSize.height = 500;
+		this.ball.textColor = "CYAN";
+		this.ball.debugText = "FOOBAR";
 	}
 
 	/**
@@ -268,7 +302,7 @@ export class Scene extends PHASER.Scene {
 		newBall.body.setCollideWorldBounds(true);
 		newBall.body.setCircle(117);
 		newBall.body.debugShowVelocity = true;
-		this.ball = new Ball(newBall);
+		this.ball = new Ball(this, newBall);
 	}
 
 	shoot(player: PHASER.Types.Physics.Arcade.SpriteWithDynamicBody) {
