@@ -3,13 +3,14 @@ import { DebugGameObject } from "./base/debug-game-object";
 import { Player } from "./player";
 
 export class Ball extends DebugGameObject {
-    private owner: Player | undefined;
+    private owner: Player | null;
 
     public constructor(scene: PHASER.Scene, public sprite: PHASER.Types.Physics.Arcade.SpriteWithDynamicBody) {
         super(scene);
+        this.owner = null;
     }
 
-    public setOwner(owner: Player | undefined){
+    public setOwner(owner: Player | null){
         this.owner = owner;
     }
 

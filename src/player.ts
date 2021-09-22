@@ -1,10 +1,19 @@
 import * as PHASER from "phaser";
 import { DebugGameObject } from "./base/debug-game-object";
 
+export const enum PlayerActions {
+	shoot = 'SHOOT',
+	special = 'AKSCHN',
+	move_up = 'MOVE_UP',
+	move_down = 'MOVE_DOWN',
+	move_left = 'MOVE_LEFT',
+	move_right = 'MOVE_RIGHT',
+}
+
 /*
- *  Describing all possible player animations.
+ *  Describing all possible player actions.
  */
-const enum PlayerAnimations{
+export const enum PlayerAnimations {
     right = "walk_right1",
     left = "walk_left1",
     up = "walk_up1",
@@ -110,5 +119,9 @@ export class Player extends DebugGameObject {
         let facing = this.direction();
         let ballPos = feetPos.add(facing.scale(ballOffset));
         return ballPos;
+    }
+
+    public update() {
+        // TODO MAKE IT HAPPEN
     }
 }

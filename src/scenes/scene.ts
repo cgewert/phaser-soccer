@@ -1,8 +1,13 @@
 import * as PHASER from "phaser";
 import * as DAT from "dat.gui";
 //import { SoccerServer } from "../server/server"
-import { Player } from "../player";
+import { Player, PlayerActions, PlayerAnimations } from "../player";
 import { Ball } from "../ball";
+
+export interface GameInput {
+	name: PlayerActions,
+	inputKey: Phaser.Input.Keyboard.Key
+}
 
 export class Scene extends PHASER.Scene {
 	private static CONFIG: Phaser.Types.Scenes.SettingsConfig = {
@@ -17,8 +22,7 @@ export class Scene extends PHASER.Scene {
 	};
 
 	private camera!: PHASER.Cameras.Scene2D.Camera;
-	private keyboard!: PHASER.Types.Input.Keyboard.CursorKeys;
-	private keyShoot!: PHASER.Input.Keyboard.Key;
+	private inputKeys: Array<GameInput> = [];
 	private players: Player[];
 	private ball!: Ball;
 	private dat = new DAT.GUI({ name: "Soccer debug GUI" });
@@ -63,7 +67,7 @@ export class Scene extends PHASER.Scene {
 		 *  Create player objects and configure layer collision behaviour.
 		 */
 		for(let i = 0; i < 2; i++){
-			let xOffset = 50*i;
+			let xOffset = 50 * i;
 			let newPlayerPhysics = this.physics.add.sprite(xOffset + 16 * 64, 7 * 64, "character", i*10);
 			let newPlayer = new Player(this, newPlayerPhysics)
 			newPlayerPhysics.setScale(1.5);
@@ -77,20 +81,41 @@ export class Scene extends PHASER.Scene {
 		}
 
 		this.createDebugTexts();
-
 		this.physics.add.collider(layerGoals, this.ball.sprite);
-
 		this.camera = this.cameras.main;
 		this.camera.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
 		this.camera.startFollow(this.players[0].sprite);
 		this.camera.setRoundPixels(true);
-
-		this.keyboard = this.input.keyboard.createCursorKeys();
-		this.keyShoot = this.input.keyboard.addKey(
-			Phaser.Input.Keyboard.KeyCodes.SPACE,
-		);
-
+		this.initializeInput();
 		this.createDatGUI();
+	}
+
+	initializeInput() {
+		this.inputKeys.push({
+			name: PlayerActions.special, inputKey: this.input.keyboard.addKey(
+			Phaser.Input.Keyboard.KeyCodes.E,
+		)});
+		// Shoot action will become tackle, when player is not in ball possession
+		this.inputKeys.push({
+			name: PlayerActions.shoot, inputKey: this.input.keyboard.addKey(
+			Phaser.Input.Keyboard.KeyCodes.SPACE,
+		)});
+		this.inputKeys.push({
+			name: PlayerActions.move_up, inputKey: this.input.keyboard.addKey(
+			Phaser.Input.Keyboard.KeyCodes.W,
+		)});
+		this.inputKeys.push({
+			name: PlayerActions.move_right, inputKey: this.input.keyboard.addKey(
+			Phaser.Input.Keyboard.KeyCodes.D,
+		)});
+		this.inputKeys.push({
+			name: PlayerActions.move_down, inputKey: this.input.keyboard.addKey(
+			Phaser.Input.Keyboard.KeyCodes.S,
+		)});
+		this.inputKeys.push({
+			name: PlayerActions.move_left, inputKey: this.input.keyboard.addKey(
+			Phaser.Input.Keyboard.KeyCodes.A,
+		)});
 	}
 
 	/*
@@ -113,12 +138,22 @@ export class Scene extends PHASER.Scene {
 	 * @param delta - Time in ms since last update call.
 	 */
 	public update(_time: number, delta: number) {
-		let xMovement = Number(this.keyboard.right.isDown) - Number(this.keyboard.left.isDown);
-		let yMovement = Number(this.keyboard.down.isDown) - Number(this.keyboard.up.isDown);
+		const right = this.inputKeys.find((value, idx, obj) => {return value.name === PlayerActions.move_right})?.inputKey
+		const left = this.inputKeys.find((value, idx, obj) => {return value.name === PlayerActions.move_left})?.inputKey
+		const up = this.inputKeys.find((value, idx, obj) => {return value.name === PlayerActions.move_up})?.inputKey
+		const down = this.inputKeys.find((value, idx, obj) => {return value.name === PlayerActions.move_down})?.inputKey
+		const shoot = this.inputKeys.find((value, idx, obj) => {return value.name === PlayerActions.shoot})?.inputKey
+		let xMovement = Number(right!.isDown) - Number(left!.isDown);
+		let yMovement = Number(down!.isDown) - Number(up!.isDown);
 		let direction = new PHASER.Math.Vector2(xMovement, yMovement).normalize().scale(delta);
-
+		
 		this.players[0].move(direction);
-
+		if(shoot?.isDown) {
+			this.shoot(this.players[0], direction);
+		}
+		this.players.map((player: Player) => {
+			player.update();
+		});
 		this.ball.updatePosition()
 
 		if(this.development){
@@ -219,7 +254,7 @@ export class Scene extends PHASER.Scene {
 
 	createPlayerAnims(){
 		this.anims.create({
-			key: "walk_down1",
+			key: PlayerAnimations.down,
 			frames: this.anims.generateFrameNumbers("character", {
 				frames: [0, 1, 2],
 			}),
@@ -237,7 +272,7 @@ export class Scene extends PHASER.Scene {
 		});
 
 		this.anims.create({
-			key: "walk_up1",
+			key: PlayerAnimations.up,
 			frames: this.anims.generateFrameNumbers("character", {
 				frames: [18, 19, 20],
 			}),
@@ -255,7 +290,7 @@ export class Scene extends PHASER.Scene {
 		});
 
 		this.anims.create({
-			key: "walk_left1",
+			key:  PlayerAnimations.left,
 			frames: this.anims.generateFrameNumbers("character", {
 				frames: [6, 7, 8],
 			}),
@@ -273,7 +308,7 @@ export class Scene extends PHASER.Scene {
 		});
 
 		this.anims.create({
-			key: "walk_right1",
+			key: PlayerAnimations.right,
 			frames: this.anims.generateFrameNumbers("character", {
 				frames: [12, 13, 14],
 			}),
@@ -303,7 +338,11 @@ export class Scene extends PHASER.Scene {
 		this.ball = new Ball(this, newBall);
 	}
 
-	shoot(player: PHASER.Types.Physics.Arcade.SpriteWithDynamicBody) {
-		// TODO : Implement logic.
+	shoot(player: Player, direction: PHASER.Math.Vector2) {
+		this.ball.setOwner(null);
+		// Shoot in player look direction please!?
+		this.ball.sprite.setVelocity(25 * direction.x, 25 * direction.y);
+		// How to move the ball !???!
+		// Ball physics..can i haz pls?
 	}
 }
