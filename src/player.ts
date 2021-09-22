@@ -85,11 +85,11 @@ export class Player extends DebugGameObject {
     }
 
     public get PositionX(){
-        return this?.sprite.x;
+        return Number.parseInt(this.sprite.x.toFixed(0));
     }
 
     public get PositionY(){
-        return this?.sprite.y;
+        return Number.parseInt(this.sprite.y.toFixed(0));
     }
 
     public position(): PHASER.Math.Vector2 {

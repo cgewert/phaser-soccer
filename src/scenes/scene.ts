@@ -21,9 +21,8 @@ export class Scene extends PHASER.Scene {
 	private keyShoot!: PHASER.Input.Keyboard.Key;
 	private players: Player[];
 	private ball!: Ball;
-	private debugTexts: PHASER.GameObjects.Text[] = [];
 	private dat = new DAT.GUI({ name: "Soccer debug GUI" });
-	private development = true;
+	private development = true ;
 
 	constructor() {
 		super(Scene.CONFIG);
@@ -76,9 +75,6 @@ export class Scene extends PHASER.Scene {
 				this.ball.setOwner(newPlayer);
 			});
 		}
-		for (const player of this.players){
-			player.debugText = `Player position: ${player?.PositionX}, ${player?.PositionY}`;
-		}
 
 		this.createDebugTexts();
 
@@ -102,33 +98,13 @@ export class Scene extends PHASER.Scene {
 	 *  GameOject instances.
 	 */
 	createDebugTexts() {
-		if(!this.development){ 
-			this.players.map((player: Player) => {
-				player.textVisible = false;
-			}); 
-			this.ball.textVisible = false;
-			return;
-		}
-
 		this.players[0].name = "PLAYER1";
 		this.players[1].name = "PLAYER2";
 		
 		// Initialize custom debug texts.	
 		for (const player of this.players){
 			player.debugText = player.name + ": " + player.debugText;
-			player.scrollFactor.x = 0;
-			player.scrollFactor.y = 0;
 		}
-		this.players[1].textPositionX = 1000;
-		this.players[1].textPositionY = 100;
-		this.ball.scrollFactor.x = 0;
-		this.ball.scrollFactor.y = 0;
-		this.ball.textPositionX = 500;
-		this.ball.textPositionY = 250;
-		this.ball.textSize.width = 500;
-		this.ball.textSize.height = 500;
-		this.ball.textColor = "CYAN";
-		this.ball.debugText = "FOOBAR";
 	}
 
 	/**
@@ -144,11 +120,33 @@ export class Scene extends PHASER.Scene {
 		this.players[0].move(direction);
 
 		this.ball.updatePosition()
+
+		if(this.development){
+			this.players.map((player: Player) => {
+				player.textPositionX = player.sprite.x - player.textDimensions.width / 2;
+				player.textPositionY = player.PositionY - player.sprite.body.halfHeight - player.textDimensions.height - 5;
+				player.debugText = `X:${player.PositionX}, Y:${player.PositionY}`;
+			});
+			
+			this.ball.textPositionX = this.ball.sprite.x - this.ball.textDimensions.width / 2;
+			this.ball.textPositionY = this.ball.sprite.y - this.ball.sprite.body.halfHeight - this.ball.textDimensions.height - 5;
+			this.ball.debugText = `X:${this.ball.PositionX}, Y:${this.ball.PositionY}`;
+		}
 	}
 
 	createDatGUI() {
 		const folderPlayer = this.dat.addFolder("Player");
 		const folderBall = this.dat.addFolder("Ball");
+		const folderSettings = this.dat.addFolder("Settings");
+		folderSettings.add(this, "development")
+			.name("DevMode")
+			.onChange((val: boolean) => {
+				for(const player of this.players) {
+					player.textVisible = val;
+				}
+				this.ball.textVisible = val;
+			})
+			.setValue(this.development);
 		let counter = 0;
 
 		for(let player of this.players){

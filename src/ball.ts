@@ -20,4 +20,12 @@ export class Ball extends DebugGameObject {
             this.sprite.y = pos.y;
         }
     }
+
+    public get PositionX(){
+        return Number.parseInt(this.sprite.x.toFixed(0));
+    }
+
+    public get PositionY(){
+        return Number.parseInt(this.sprite.y.toFixed(0));
+    }
 }

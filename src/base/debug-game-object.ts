@@ -3,6 +3,11 @@ export interface ScrollFactor {
     y: number
 }
 
+export interface TextDimensions {
+    width: number,
+    height: number
+}
+
 export class DebugGameObject{
     private _gameobject: Phaser.GameObjects.Text;
     
@@ -13,6 +18,8 @@ export class DebugGameObject{
             this.debugText
         );
         this.textColor = "WHITE";
+        this.debugText = `X:${this._gameobject.x}, Y:${this._gameobject.y}`;
+        this.scrollFactor = {x:1, y:1};
     }
 
     public get textSize() {
@@ -74,5 +81,9 @@ export class DebugGameObject{
 
     public set textVisible(visible: boolean){
         this._gameobject.visible = visible;
+    }
+
+    public get textDimensions() : TextDimensions {
+        return { width: this._gameobject.width, height: this._gameobject.height }
     }
 }
