@@ -75,8 +75,10 @@ export class Scene extends PHASER.Scene {
 			newPlayerPhysics.setCollideWorldBounds(true);
 			this.physics.add.collider(newPlayerPhysics, layerGoals);
 			this.players.push(newPlayer);
-			this.physics.add.overlap(newPlayerPhysics, this.ball.sprite, () => {
+			newPlayer.ballCollider = this.physics.add.overlap(newPlayerPhysics, this.ball.sprite, () => {
 				this.ball.owner = newPlayer;
+				this.ball.sprite.setVelocity(0);
+				this.ball.sprite.setAcceleration(0);
 			});
 		}
 
@@ -224,7 +226,7 @@ export class Scene extends PHASER.Scene {
 		);
 		this.createVectorGui(
 			folderBall, "drag", this.ball.sprite.body.drag,
-			0, 60, 0.1,
+			0,  500, 0.1,
 		);
 		this.createVectorGui(
 			folderBall,
@@ -330,21 +332,27 @@ export class Scene extends PHASER.Scene {
 	initializeBall() {
 		let newBall = this.physics.add.sprite(-50 + 16 * 64 - 10, 7 * 64, "ball", 0)
 			.setScale(0.13);
-		newBall.body.setFriction(1, 1);
-		newBall.body.setBounce(0.5, 0.5);
-		newBall.body.setCollideWorldBounds(true);
-		newBall.body.setCircle(117);
-		newBall.body.debugShowVelocity = true;
+		newBall.body
+			.setFriction(1, 1)
+			.setBounce(1, 1)
+			.setDrag(200, 200)
+			.setCollideWorldBounds(true)
+			.setCircle(117)
+			.debugShowVelocity = true;
+
 		this.ball = new Ball(this, newBall);
 	}
 
 	shoot() {
 		if(this.ball.owner){
 			const playerDirection = this.ball.owner.direction();
-			this.ball.sprite.setVelocity(500 * playerDirection.x, 500 * playerDirection.y);
-			// How to move the ball !???!
-
-			// Ball physics..can i haz pls?
+			this.ball.owner.setBallCollider(false);
+			const lastOwnerRef = this.ball.owner;
+			setTimeout(() => {
+				lastOwnerRef?.setBallCollider(true);
+			}, Player.BALL_COLLIDER_TIMEOUT);
+			this.ball.sprite.setVelocity(Player.BALL_SHOOT_POWER * playerDirection.x, 
+										 Player.BALL_SHOOT_POWER * playerDirection.y);
 
 			// Let player lose ball possession.
 			this.ball.owner = null;

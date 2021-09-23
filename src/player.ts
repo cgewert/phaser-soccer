@@ -24,8 +24,11 @@ export const enum PlayerAnimations {
  * Class representing individual player instances.
  */
 export class Player extends DebugGameObject {
+    public static readonly BALL_COLLIDER_TIMEOUT = 250;
+    public static readonly BALL_SHOOT_POWER = 1800;
     private _name: string;
     private _speed = 25;    // Determines players velocity on all axis.
+    private _ballCollider: PHASER.Physics.Arcade.Collider | null = null;
     private facingDirection: PHASER.Math.Vector2;
 
     /**
@@ -54,6 +57,14 @@ export class Player extends DebugGameObject {
         super(scene);
         this.facingDirection = new PHASER.Math.Vector2(0,0);
         this._name = name;
+    }
+
+    public get ballCollider(): PHASER.Physics.Arcade.Collider | null {
+        return this._ballCollider;
+    }
+
+    public set ballCollider(value: PHASER.Physics.Arcade.Collider | null) {
+        this._ballCollider = value;
     }
 
     public get speed(){
@@ -115,10 +126,16 @@ export class Player extends DebugGameObject {
     public ballJugglePosition(): PHASER.Math.Vector2 {
         const ballOffset = 30;
         let feetPos = this.position();
-        feetPos.y += this.sprite.height/2;
+        feetPos.y += this.sprite.body.halfHeight;
         let facing = this.direction();
         let ballPos = feetPos.add(facing.scale(ballOffset));
         return ballPos;
+    }
+
+    public setBallCollider(active: boolean) {
+        if(this.ballCollider) {
+            this.ballCollider.active = active;
+        }
     }
 
     public update() {
