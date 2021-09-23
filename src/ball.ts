@@ -3,18 +3,22 @@ import { DebugGameObject } from "./base/debug-game-object";
 import { Player } from "./player";
 
 export class Ball extends DebugGameObject {
-    private owner: Player | null;
+    private _owner: Player | null;
 
     public constructor(scene: PHASER.Scene, public sprite: PHASER.Types.Physics.Arcade.SpriteWithDynamicBody) {
         super(scene);
-        this.owner = null;
+        this._owner =  null;
     }
 
-    public setOwner(owner: Player | null){
-        this.owner = owner;
+    public set owner(player: Player | null) {
+        this._owner = player;
     }
 
-    public updatePosition(){
+    public get owner() {
+        return this._owner;
+    }
+
+    public updatePosition() {
         if(this.owner){
             let pos = this.owner.ballJugglePosition();
             this.sprite.x = pos.x;
@@ -23,10 +27,10 @@ export class Ball extends DebugGameObject {
     }
 
     public get PositionX(){
-        return Number.parseInt(this.sprite.x.toFixed(0));
+        return Number.parseInt(`${this.sprite.x}`);
     }
 
     public get PositionY(){
-        return Number.parseInt(this.sprite.y.toFixed(0));
+        return Number.parseInt(`${this.sprite.y}`);
     }
 }

@@ -75,8 +75,8 @@ export class Scene extends PHASER.Scene {
 			newPlayerPhysics.setCollideWorldBounds(true);
 			this.physics.add.collider(newPlayerPhysics, layerGoals);
 			this.players.push(newPlayer);
-			this.physics.add.overlap(newPlayerPhysics, this.ball.sprite, () =>{
-				this.ball.setOwner(newPlayer);
+			this.physics.add.overlap(newPlayerPhysics, this.ball.sprite, () => {
+				this.ball.owner = newPlayer;
 			});
 		}
 
@@ -149,7 +149,7 @@ export class Scene extends PHASER.Scene {
 		
 		this.players[0].move(direction);
 		if(shoot?.isDown) {
-			this.shoot(this.players[0], direction);
+			this.shoot();
 		}
 		this.players.map((player: Player) => {
 			player.update();
@@ -338,11 +338,16 @@ export class Scene extends PHASER.Scene {
 		this.ball = new Ball(this, newBall);
 	}
 
-	shoot(player: Player, direction: PHASER.Math.Vector2) {
-		this.ball.setOwner(null);
-		// Shoot in player look direction please!?
-		this.ball.sprite.setVelocity(25 * direction.x, 25 * direction.y);
-		// How to move the ball !???!
-		// Ball physics..can i haz pls?
+	shoot() {
+		if(this.ball.owner){
+			const playerDirection = this.ball.owner.direction();
+			this.ball.sprite.setVelocity(500 * playerDirection.x, 500 * playerDirection.y);
+			// How to move the ball !???!
+
+			// Ball physics..can i haz pls?
+
+			// Let player lose ball possession.
+			this.ball.owner = null;
+		}	
 	}
 }
