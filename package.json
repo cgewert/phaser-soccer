@@ -16,17 +16,12 @@
   "author": "Christian Gewert <cgewert@gmail.com>",
   "license": "ISC",
   "dependencies": {
-    "colyseus": "^0.14.23",
-    "colyseus.js": "^0.14.13",
-    "phaser": "^3.55.2",
-    "stream-http": "^3.2.0",
-    "websocket": "^1.0.34"
+    "phaser": "^3.55.2"
   },
   "devDependencies": {
     "@types/dat.gui": "^0.7.7",
     "@types/debug": "^4.1.7",
     "@types/node": "^16.9.4",
-    "@types/websocket": "^1.0.4",
     "@webpack-cli/serve": "^1.5.2",
     "clean-webpack-plugin": "^4.0.0",
     "copy-webpack-plugin": "^9.0.1",

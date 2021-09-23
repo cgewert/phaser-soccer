@@ -1,6 +1,6 @@
 //import * as http from 'http';
 //import * as ws from 'websocket';
-import * as Colyseus from 'colyseus.js'
+//import * as Colyseus from 'colyseus.js'
 //import { Server, RedisPresence } from 'colyseus';
 //import { createServer } from "http";
 
@@ -12,7 +12,7 @@ export class SoccerServer{
     private client: any = null;
 
     public constructor(){
-        this.client = new Colyseus.Client("ws://localhost:2567");
+        //this.client = new Colyseus.Client("ws://localhost:2567");
         
         /*this.server = new Server({
             presence: new RedisPresence(),
