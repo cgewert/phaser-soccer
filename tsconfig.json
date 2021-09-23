@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "moduleResolution": "Node",
+    "moduleResolution": "node",
     "removeComments": true,
     "sourceMap": true,
     "outDir": "./out",
@@ -15,7 +15,7 @@
     "noImplicitThis": true,                /* Raise error on 'this' expressions with an implied 'any' type. */
     "alwaysStrict": true,                  /* Parse in strict mode and emit "use strict" for each source file. */
     "esModuleInterop": true,               /* Enables emit interoperability between CommonJS and ES Modules via creation of namespace objects for all imports. Implies 'allowSyntheticDefaultImports'. */
-    "target": "ES2015"                     /* Zeus forgot this. */
+    "target": "ES2015"
   },
   "include": [
     "src/**/*"
