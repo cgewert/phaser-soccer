@@ -8,7 +8,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows]
+        os: [ubuntu-latest]
         node: ['14']
 
     steps:
