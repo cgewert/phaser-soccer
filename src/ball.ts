@@ -1,11 +1,12 @@
 import * as PHASER from "phaser";
 import { DebugGameObject } from "./base/debug-game-object";
 import { Player } from "./player";
+import { Scene } from "./scenes/scene";
 
 export class Ball extends DebugGameObject {
     private _owner: Player | null;
 
-    public constructor(scene: PHASER.Scene, public sprite: PHASER.Types.Physics.Arcade.SpriteWithDynamicBody) {
+    public constructor(scene: Scene, public sprite: PHASER.Types.Physics.Arcade.SpriteWithDynamicBody) {
         super(scene);
         this._owner =  null;
     }

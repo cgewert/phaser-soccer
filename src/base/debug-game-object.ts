@@ -1,3 +1,5 @@
+import { Scene } from "../scenes/scene";
+
 export interface ScrollFactor {
     x: number,
     y: number
@@ -11,7 +13,7 @@ export interface TextDimensions {
 export class DebugGameObject{
     private _gameobject: Phaser.GameObjects.Text;
     
-    public constructor(private scene: Phaser.Scene) {
+    public constructor(protected scene: Scene) {
         this._gameobject = this.scene.add.text(
             this.textPosition.x, 
             this.textPosition.y, 

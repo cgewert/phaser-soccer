@@ -1,5 +1,6 @@
 import * as PHASER from "phaser";
 import { DebugGameObject } from "./base/debug-game-object";
+import { Scene } from "./scenes/scene";
 
 export const enum PlayerActions {
 	shoot = 'SHOOT',
@@ -8,6 +9,7 @@ export const enum PlayerActions {
 	move_down = 'MOVE_DOWN',
 	move_left = 'MOVE_LEFT',
 	move_right = 'MOVE_RIGHT',
+    center = 'CENTER'
 }
 
 /*
@@ -52,7 +54,7 @@ export class Player extends DebugGameObject {
        return null;
    }
 
-    public constructor(scene: PHASER.Scene, public sprite: PHASER.Types.Physics.Arcade.SpriteWithDynamicBody, 
+    public constructor(scene: Scene, public sprite: PHASER.Types.Physics.Arcade.SpriteWithDynamicBody, 
                        name="Sir Knumskull") {
         super(scene);
         this.facingDirection = new PHASER.Math.Vector2(0,0);
@@ -136,6 +138,11 @@ export class Player extends DebugGameObject {
         if(this.ballCollider) {
             this.ballCollider.active = active;
         }
+    }
+
+    // Centers cam on this player.
+    public center(){
+        this.scene.camera.centerOn(this.PositionX, this.PositionY);
     }
 
     public update() {

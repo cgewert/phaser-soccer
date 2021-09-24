@@ -22,7 +22,7 @@ export class Scene extends PHASER.Scene {
 		},
 	};
 
-	private camera!: PHASER.Cameras.Scene2D.Camera;
+	public camera!: PHASER.Cameras.Scene2D.Camera;
 	private inputKeys: Array<GameInput> = [];
 	private players: Player[];
 	private ball!: Ball;
@@ -36,10 +36,10 @@ export class Scene extends PHASER.Scene {
 
 	public preload() {
 		//const server = new SoccerServer();
-		this.physics.world.setBounds(0, 0, 2048, 1024);
+		this.physics.world.setBounds(0, 0, 6144, 2048);
 		this.load.image("tiles1", "assets/gfx/tiles/Grassland.png");
 		this.load.image("ball", "assets/gfx/ball.png");
-		this.load.tilemapTiledJSON("level", "assets/maps/soccer.json");
+		this.load.tilemapTiledJSON("level", "assets/maps/playfield1.json");
 		this.load.spritesheet("character", "assets/gfx/character/character.png", {
 			frameWidth: 48,
 			frameHeight: 64,
@@ -53,13 +53,11 @@ export class Scene extends PHASER.Scene {
 			tileHeight: 64,
 		});
 		const tileSet = map.addTilesetImage("Grassland", "tiles1");
-		const layerGras = map.createLayer("Gras", tileSet, 0, 0);
-		const layerDecor = map.createLayer("Decor", tileSet, 0, 0);
-		const layerGoals = map.createLayer("Goals", tileSet, 0, 0);
+		const layerGras = map.createLayer("Background", tileSet, 0, 0);
+		const layerGoals = map.createLayer("Foreground", tileSet, 0, 0);
 		layerGoals.setCollisionByExclusion([-1], true);
-		layerGras.skipCull = false;
-		layerDecor.skipCull = false;
-		layerGoals.skipCull = false;
+		layerGras.skipCull = true;
+		layerGoals.skipCull = true;
 
 		this.createPlayerAnims();
 		this.initializeBall();
@@ -87,7 +85,6 @@ export class Scene extends PHASER.Scene {
 		this.physics.add.collider(layerGoals, this.ball.sprite);
 		this.camera = this.cameras.main;
 		this.camera.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
-		this.camera.startFollow(this.players[0].sprite);
 		this.camera.setRoundPixels(true);
 		this.initializeInput();
 		this.createDatGUI();
@@ -98,9 +95,8 @@ export class Scene extends PHASER.Scene {
 			name: PlayerActions.special, inputKey: this.input.keyboard.addKey(
 			Phaser.Input.Keyboard.KeyCodes.E,
 		)});
-		// Shoot action will become tackle, when player is not in ball possession
 		this.inputKeys.push({
-			name: PlayerActions.shoot, inputKey: this.input.keyboard.addKey(
+			name: PlayerActions.center, inputKey: this.input.keyboard.addKey(
 			Phaser.Input.Keyboard.KeyCodes.SPACE,
 		)});
 		this.inputKeys.push({
@@ -145,19 +141,34 @@ export class Scene extends PHASER.Scene {
 		const left = this.inputKeys.find((value, idx, obj) => {return value.name === PlayerActions.move_left})?.inputKey
 		const up = this.inputKeys.find((value, idx, obj) => {return value.name === PlayerActions.move_up})?.inputKey
 		const down = this.inputKeys.find((value, idx, obj) => {return value.name === PlayerActions.move_down})?.inputKey
-		const shoot = this.inputKeys.find((value, idx, obj) => {return value.name === PlayerActions.shoot})?.inputKey
+		const center = this.inputKeys.find((value, idx, obj) => {return value.name === PlayerActions.center})?.inputKey
 		let xMovement = Number(right!.isDown) - Number(left!.isDown);
 		let yMovement = Number(down!.isDown) - Number(up!.isDown);
 		let direction = new PHASER.Math.Vector2(xMovement, yMovement).normalize().scale(delta);
 		
 		this.players[0].move(direction);
-		if(shoot?.isDown) {
-			this.shoot();
+		if(center?.isDown) {
+			this.players[0].center();
 		}
 		this.players.map((player: Player) => {
 			player.update();
 		});
 		this.ball.updatePosition()
+
+		// Scroll camera
+		const camScrollSpeed = 2000;
+		if(this.input.activePointer.x >= this.camera.x + this.camera.width - 100){
+			this.camera.scrollX += camScrollSpeed * delta / 1000;
+		}
+		if(this.input.activePointer.x <= this.camera.x + 100){
+			this.camera.scrollX -= camScrollSpeed * delta / 1000;
+		}
+		if(this.input.activePointer.y >= this.camera.y + this.camera.height - 100){
+			this.camera.scrollY += camScrollSpeed * delta / 1000;
+		}
+		if(this.input.activePointer.y <= this.camera.y + 100){
+			this.camera.scrollY -= camScrollSpeed * delta / 1000;
+		}
 
 		if(this.development){
 			this.players.map((player: Player) => {
@@ -173,6 +184,9 @@ export class Scene extends PHASER.Scene {
 	}
 
 	createDatGUI() {
+		const folderCamera = this.dat.addFolder("Camera");
+		folderCamera.add(this.camera, "scrollX", 0, 6144, 1);
+		folderCamera.add(this.camera, "scrollY", 0, 2048, 1);
 		const folderPlayer = this.dat.addFolder("Player");
 		const folderBall = this.dat.addFolder("Ball");
 		const folderSettings = this.dat.addFolder("Settings");
