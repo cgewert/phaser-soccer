@@ -17,6 +17,7 @@ export class Scene extends PHASER.Scene {
 			arcade: {
 				gravity: { x: 0, y: 0 },
 				debug: true,
+				fixedStep: false
 			},
 		},
 	};
@@ -180,10 +181,14 @@ export class Scene extends PHASER.Scene {
 			.onChange((val: boolean) => {
 				for(const player of this.players) {
 					player.textVisible = val;
+					this.physics.world.debugGraphic.clear();
+					this.physics.world.drawDebug = val;
 				}
 				this.ball.textVisible = val;
 			})
 			.setValue(this.development);
+		folderSettings.add(this.physics.world, "fps", 10, 2000, 1)
+			.name("World FPS")
 		let counter = 0;
 
 		for(let player of this.players){
@@ -334,8 +339,8 @@ export class Scene extends PHASER.Scene {
 			.setScale(0.13);
 		newBall.body
 			.setFriction(1, 1)
-			.setBounce(1, 1)
-			.setDrag(200, 200)
+			.setBounce(.5, .5)
+			.setDrag(230, 230)
 			.setCollideWorldBounds(true)
 			.setCircle(117)
 			.debugShowVelocity = true;
