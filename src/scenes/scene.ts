@@ -3,12 +3,6 @@ import * as DAT from "dat.gui";
 //import { SoccerServer } from "../server/server"
 import { Player, PlayerActions, PlayerAnimations } from "../player";
 import { Ball } from "../ball";
-
-export interface GameInput {
-	name: PlayerActions,
-	inputKey: Phaser.Input.Keyboard.Key
-}
-
 export class Scene extends PHASER.Scene {
 	private static CONFIG: Phaser.Types.Scenes.SettingsConfig = {
 		key: "scene",
@@ -17,28 +11,31 @@ export class Scene extends PHASER.Scene {
 			arcade: {
 				gravity: { x: 0, y: 0 },
 				debug: true,
-				fixedStep: false
+				fixedStep: true
 			},
 		},
 	};
 
 	public camera!: PHASER.Cameras.Scene2D.Camera;
-	private inputKeys: Array<GameInput> = [];
-	private players: Player[];
-	private ball!: Ball;
+	private player!: Player;
+	public ball!: Ball;
 	private dat = new DAT.GUI({ name: "Soccer debug GUI" });
 	private development = true ;
 
 	constructor() {
 		super(Scene.CONFIG);
-		this.players = [];
 	}
 
 	public preload() {
 		//const server = new SoccerServer();
 		this.physics.world.setBounds(0, 0, 6144, 2048);
+		this.input.mouse.disableContextMenu();
 		this.load.image("tiles1", "assets/gfx/tiles/Grassland.png");
 		this.load.image("ball", "assets/gfx/ball.png");
+		this.load.spritesheet("cursor", "assets/gfx/cursors/destination.png", {
+			frameWidth: 18,
+			frameHeight: 18,
+		});
 		this.load.tilemapTiledJSON("level", "assets/maps/playfield1.json");
 		this.load.spritesheet("character", "assets/gfx/character/character.png", {
 			frameWidth: 48,
@@ -58,63 +55,36 @@ export class Scene extends PHASER.Scene {
 		layerGoals.setCollisionByExclusion([-1], true);
 		layerGras.skipCull = true;
 		layerGoals.skipCull = true;
-
 		this.createPlayerAnims();
 		this.initializeBall();
 
-		/*
-		 *  Create player objects and configure layer collision behaviour.
-		 */
-		for(let i = 0; i < 2; i++){
-			let xOffset = 50 * i;
-			let newPlayerPhysics = this.physics.add.sprite(xOffset + 16 * 64, 7 * 64, "character", i*10);
-			let newPlayer = new Player(this, newPlayerPhysics)
-			newPlayerPhysics.setScale(1.5);
-			newPlayerPhysics.setSize(newPlayerPhysics.width - 20, newPlayerPhysics.height - 10);
-			newPlayerPhysics.setCollideWorldBounds(true);
-			this.physics.add.collider(newPlayerPhysics, layerGoals);
-			this.players.push(newPlayer);
-			newPlayer.ballCollider = this.physics.add.overlap(newPlayerPhysics, this.ball.sprite, () => {
-				this.ball.owner = newPlayer;
+		// Create spritesheet for cursor
+		this.anims.create({
+			key: 'cursor_destination',
+			frames: this.anims.generateFrameNumbers("cursor", {
+				frames: [0, 1, 2, 3, 4],
+			}),
+			frameRate: 8,
+			repeat: -1,
+		});
+		// Create a player instance.
+		this.player = new Player(this);
+		// Register player collision handlers.
+		this.physics.add.collider(this.player.sprite, layerGoals);
+		this.player.ballCollider = this.physics.add.overlap(this.player.sprite, 
+															this.ball.sprite, 
+															() => {
+				this.ball.owner = this.player;
 				this.ball.sprite.setVelocity(0);
 				this.ball.sprite.setAcceleration(0);
 			});
-		}
 
 		this.createDebugTexts();
 		this.physics.add.collider(layerGoals, this.ball.sprite);
 		this.camera = this.cameras.main;
 		this.camera.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
 		this.camera.setRoundPixels(true);
-		this.initializeInput();
 		this.createDatGUI();
-	}
-
-	initializeInput() {
-		this.inputKeys.push({
-			name: PlayerActions.special, inputKey: this.input.keyboard.addKey(
-			Phaser.Input.Keyboard.KeyCodes.E,
-		)});
-		this.inputKeys.push({
-			name: PlayerActions.center, inputKey: this.input.keyboard.addKey(
-			Phaser.Input.Keyboard.KeyCodes.SPACE,
-		)});
-		this.inputKeys.push({
-			name: PlayerActions.move_up, inputKey: this.input.keyboard.addKey(
-			Phaser.Input.Keyboard.KeyCodes.W,
-		)});
-		this.inputKeys.push({
-			name: PlayerActions.move_right, inputKey: this.input.keyboard.addKey(
-			Phaser.Input.Keyboard.KeyCodes.D,
-		)});
-		this.inputKeys.push({
-			name: PlayerActions.move_down, inputKey: this.input.keyboard.addKey(
-			Phaser.Input.Keyboard.KeyCodes.S,
-		)});
-		this.inputKeys.push({
-			name: PlayerActions.move_left, inputKey: this.input.keyboard.addKey(
-			Phaser.Input.Keyboard.KeyCodes.A,
-		)});
 	}
 
 	/*
@@ -122,13 +92,8 @@ export class Scene extends PHASER.Scene {
 	 *  GameOject instances.
 	 */
 	createDebugTexts() {
-		this.players[0].name = "PLAYER1";
-		this.players[1].name = "PLAYER2";
-		
-		// Initialize custom debug texts.	
-		for (const player of this.players){
-			player.debugText = player.name + ": " + player.debugText;
-		}
+		this.player.name = "PLAYER1";
+		this.player.debugText = this.player.name + ": " + this.player.debugText;
 	}
 
 	/**
@@ -137,22 +102,9 @@ export class Scene extends PHASER.Scene {
 	 * @param delta - Time in ms since last update call.
 	 */
 	public update(_time: number, delta: number) {
-		const right = this.inputKeys.find((value, idx, obj) => {return value.name === PlayerActions.move_right})?.inputKey
-		const left = this.inputKeys.find((value, idx, obj) => {return value.name === PlayerActions.move_left})?.inputKey
-		const up = this.inputKeys.find((value, idx, obj) => {return value.name === PlayerActions.move_up})?.inputKey
-		const down = this.inputKeys.find((value, idx, obj) => {return value.name === PlayerActions.move_down})?.inputKey
-		const center = this.inputKeys.find((value, idx, obj) => {return value.name === PlayerActions.center})?.inputKey
-		let xMovement = Number(right!.isDown) - Number(left!.isDown);
-		let yMovement = Number(down!.isDown) - Number(up!.isDown);
-		let direction = new PHASER.Math.Vector2(xMovement, yMovement).normalize().scale(delta);
-		
-		this.players[0].move(direction);
-		if(center?.isDown) {
-			this.players[0].center();
-		}
-		this.players.map((player: Player) => {
-			player.update();
-		});
+		this.player.update();
+
+		// TODO: refactor to ball class
 		this.ball.updatePosition()
 
 		// Scroll camera
@@ -171,11 +123,9 @@ export class Scene extends PHASER.Scene {
 		}
 
 		if(this.development){
-			this.players.map((player: Player) => {
-				player.textPositionX = player.sprite.x - player.textDimensions.width / 2;
-				player.textPositionY = player.PositionY - player.sprite.body.halfHeight - player.textDimensions.height - 5;
-				player.debugText = `X:${player.PositionX}, Y:${player.PositionY}`;
-			});
+			this.player.textPositionX = this.player.sprite.x - this.player.textDimensions.width / 2;
+			this.player.textPositionY = this.player.PositionY - this.player.sprite.body.halfHeight - this.player.textDimensions.height - 5;
+			this.player.debugText = `X:${this.player.PositionX}, Y:${this.player.PositionY}`;
 			
 			this.ball.textPositionX = this.ball.sprite.x - this.ball.textDimensions.width / 2;
 			this.ball.textPositionY = this.ball.sprite.y - this.ball.sprite.body.halfHeight - this.ball.textDimensions.height - 5;
@@ -193,11 +143,9 @@ export class Scene extends PHASER.Scene {
 		folderSettings.add(this, "development")
 			.name("DevMode")
 			.onChange((val: boolean) => {
-				for(const player of this.players) {
-					player.textVisible = val;
-					this.physics.world.debugGraphic.clear();
-					this.physics.world.drawDebug = val;
-				}
+				this.player.textVisible = val;
+				this.physics.world.debugGraphic.clear();
+				this.physics.world.drawDebug = val;
 				this.ball.textVisible = val;
 			})
 			.setValue(this.development);
@@ -205,28 +153,11 @@ export class Scene extends PHASER.Scene {
 			.name("World FPS")
 		let counter = 0;
 
-		for(let player of this.players){
-			let newPlayerFolder = null;
-			do{
-				try{
-					if(counter > 0){
-						newPlayerFolder = folderPlayer.addFolder(`${player.name}${counter}`);
-					}
-					else{
-						newPlayerFolder = folderPlayer.addFolder(`${player.name}`);
-					}
-					break;
-				}
-				catch(exc: unknown){
-					counter++;
-				}
-			}
-			while(true)
+		const newPlayerFolder = folderPlayer.addFolder(`${this.player.name}${counter}`);
 
-			newPlayerFolder.add(player.sprite, "x", 0, 2000, 1);
-			newPlayerFolder.add(player.sprite, "y", 0, 2000, 1);
-			newPlayerFolder.add(player, "speed", -1000, 2000, 1);
-		}
+		newPlayerFolder.add(this.player.sprite, "x", 0, 2000, 1);
+		newPlayerFolder.add(this.player.sprite, "y", 0, 2000, 1);
+		newPlayerFolder.add(this.player, "speed", -1000, 2000, 1);
 
 		folderBall.add(this.ball.sprite, "x", 0, 3000, 1);
 		folderBall.add(this.ball.sprite, "y", 0, 3000, 1);
@@ -360,21 +291,5 @@ export class Scene extends PHASER.Scene {
 			.debugShowVelocity = true;
 
 		this.ball = new Ball(this, newBall);
-	}
-
-	shoot() {
-		if(this.ball.owner){
-			const playerDirection = this.ball.owner.direction();
-			this.ball.owner.setBallCollider(false);
-			const lastOwnerRef = this.ball.owner;
-			setTimeout(() => {
-				lastOwnerRef?.setBallCollider(true);
-			}, Player.BALL_COLLIDER_TIMEOUT);
-			this.ball.sprite.setVelocity(Player.BALL_SHOOT_POWER * playerDirection.x, 
-										 Player.BALL_SHOOT_POWER * playerDirection.y);
-
-			// Let player lose ball possession.
-			this.ball.owner = null;
-		}	
 	}
 }

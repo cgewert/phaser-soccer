@@ -1,7 +1,11 @@
 import * as PHASER from "phaser";
 import { DebugGameObject } from "./base/debug-game-object";
+import { GameInput } from "./models/input";
 import { Scene } from "./scenes/scene";
 
+/*
+ *  Describing all possible player actions.
+ */
 export const enum PlayerActions {
 	shoot = 'SHOOT',
 	special = 'AKSCHN',
@@ -13,7 +17,7 @@ export const enum PlayerActions {
 }
 
 /*
- *  Describing all possible player actions.
+ *  Describing all possible player animations.
  */
 export const enum PlayerAnimations {
     right = "walk_right1",
@@ -32,6 +36,14 @@ export class Player extends DebugGameObject {
     private _speed = 25;    // Determines players velocity on all axis.
     private _ballCollider: PHASER.Physics.Arcade.Collider | null = null;
     private facingDirection: PHASER.Math.Vector2;
+    private keyCenter?: Phaser.Input.Keyboard.Key;
+    private keyAction?: Phaser.Input.Keyboard.Key;
+    private keyShoot?: Phaser.Input.Keyboard.Key;
+    private mouse!: Phaser.Input.Pointer;
+    private destination!: Phaser.Math.Vector2 | null;
+    private destination_sprite?: Phaser.GameObjects.Sprite;
+    public sprite!: Phaser.Physics.Arcade.Sprite;
+    public inputKeys: Array<GameInput> = [];
 
     /**
       * Returns an animation for a given direction.
@@ -54,12 +66,61 @@ export class Player extends DebugGameObject {
        return null;
    }
 
-    public constructor(scene: Scene, public sprite: PHASER.Types.Physics.Arcade.SpriteWithDynamicBody, 
-                       name="Sir Knumskull") {
+    public constructor(scene: Scene, name="Sir Knumskull") {
         super(scene);
+        this.sprite = this.scene.physics.add.sprite(50, 50, "character", 12);
+        this.sprite.setScale(1.5)
+            .setSize(this.sprite.width - 20, this.sprite.height - 10)
+            .setCollideWorldBounds(true);
         this.facingDirection = new PHASER.Math.Vector2(0,0);
         this._name = name;
+        this.initializeInput();
     }
+
+    initializeInput() {
+		this.mouse = this.scene.input.activePointer;
+		this.scene.input.on("pointerup", (ev: any) => {
+			if(this.mouse.rightButtonReleased()){
+                this.destination = new PHASER.Math.Vector2(this.mouse.worldX, this.mouse.worldY);
+				this.scene.physics.moveTo(this.sprite, this.destination.x, 
+                                          this.destination.y, 200);
+                if(this.destination_sprite){
+                    this.destination_sprite.destroy();
+                }
+                this.destination_sprite = this.scene.add.sprite(this.destination.x, this.destination.y, "cursor");
+                this.destination_sprite.play("cursor_destination").setScale(2);
+            }
+		});
+
+		this.inputKeys.push({
+			name: PlayerActions.special, inputKey: this.scene.input.keyboard.addKey(
+			Phaser.Input.Keyboard.KeyCodes.E,
+		)});
+		this.inputKeys.push({
+			name: PlayerActions.center, inputKey: this.scene.input.keyboard.addKey(
+			Phaser.Input.Keyboard.KeyCodes.SPACE,
+		)});
+		this.inputKeys.push({
+			name: PlayerActions.move_up, inputKey: this.scene.input.keyboard.addKey(
+			Phaser.Input.Keyboard.KeyCodes.W,
+		)});
+		this.inputKeys.push({
+			name: PlayerActions.move_right, inputKey: this.scene.input.keyboard.addKey(
+			Phaser.Input.Keyboard.KeyCodes.D,
+		)});
+		this.inputKeys.push({
+			name: PlayerActions.move_down, inputKey: this.scene.input.keyboard.addKey(
+			Phaser.Input.Keyboard.KeyCodes.S,
+		)});
+		this.inputKeys.push({
+			name: PlayerActions.move_left, inputKey: this.scene.input.keyboard.addKey(
+			Phaser.Input.Keyboard.KeyCodes.A,
+		)});
+
+        this.keyCenter = this.inputKeys.find((value, idx, obj) => {return value.name === PlayerActions.center})?.inputKey
+		this.keyAction = this.inputKeys.find((value, idx, obj) => {return value.name === PlayerActions.special})?.inputKey
+		this.keyShoot = this.inputKeys.find((value, idx, obj) => {return value.name === PlayerActions.shoot})?.inputKey
+	}
 
     public get ballCollider(): PHASER.Physics.Arcade.Collider | null {
         return this._ballCollider;
@@ -145,7 +206,39 @@ export class Player extends DebugGameObject {
         this.scene.camera.centerOn(this.PositionX, this.PositionY);
     }
 
+    shoot() {
+		if(this.scene.ball.owner === this){
+			const playerDirection = this.scene.ball.owner.direction();
+			this.scene.ball.owner.setBallCollider(false);
+			const lastOwnerRef = this.scene.ball.owner;
+			setTimeout(() => {
+				lastOwnerRef?.setBallCollider(true);
+			}, Player.BALL_COLLIDER_TIMEOUT);
+			this.scene.ball.sprite.setVelocity(Player.BALL_SHOOT_POWER * playerDirection.x, 
+										 Player.BALL_SHOOT_POWER * playerDirection.y);
+
+			// Let player lose ball possession.
+			this.scene.ball.owner = null;
+		}	
+	}
+
     public update() {
-        // TODO MAKE IT HAPPEN
+        if(this.keyCenter?.isDown) {
+			this.center();
+		}
+        // TODO: Stop player movement when destination is reached.
+        if(this.destination){
+            if(this.destination.x <= this.sprite.body.x){
+                /*this.sprite
+                    .setVelocityX(0)
+                    .setAccelerationX(0);*/
+            }
+            if(this.destination.y <= this.sprite.body.y){
+                /*this.sprite
+                    .setVelocityY(0)
+                    .setAccelerationY(0);*/
+            }
+            //this.destination = null;
+        }
     }
 }
