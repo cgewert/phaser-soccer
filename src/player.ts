@@ -71,6 +71,7 @@ export class Player extends DebugGameObject {
                     .setPosition(0, 0);
             }
         });
+        this.destination = null;
     }
 
     public initializePlayerAnims(){
@@ -288,5 +289,21 @@ export class Player extends DebugGameObject {
 
         // Update player animation and move sprite.
         this.move();
+
+        // If not moving look in mouse pointer direction
+        if(this.destination === null){
+            const pointerPosition = new Phaser.Math.Vector2(
+                 this.scene.input.activePointer.worldX,
+                 this.scene.input.activePointer.worldY
+            );
+            const playerScreenPosition = this.position;
+
+            if(playerScreenPosition.x < pointerPosition.x) {
+                this.sprite.setFrame(13); // Look right
+            }
+            if(playerScreenPosition.x > pointerPosition.x) {
+                this.sprite.setFrame(7); // Look left
+            }
+        }
     }
 }

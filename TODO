@@ -6,9 +6,9 @@
 ✔ Reuse destination marker gameobject instead of reinitializing @done(21-09-25 20:54)
 ✔ Stop player movement when reaching destination vector @done(21-09-25 22:47)
 ✔ Reimplement Ball Juggling @done(21-09-25 23:16)
+✔ Make player look in mouse pointer direction @done(21-09-26 00:44)
 
 Prio from top to bottom
-☐ Make player look in mouse pointer direction
 ☐ Implement shot ability and hotkey
 ☐ Implement Zoom function on mouse wheel
 ☐ Make camera scroll speed accelerated
