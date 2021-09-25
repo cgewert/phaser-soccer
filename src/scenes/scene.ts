@@ -122,15 +122,10 @@ export class Scene extends PHASER.Scene {
 		}
 
 		if(this.development){
-			// this.player.textPositionX = this.player.sprite.x - this.player.textDimensions.width / 2;
-			// this.player.textPositionY = this.player.PositionY - this.player.sprite.body.halfHeight - this.player.textDimensions.height - 5;
-			this.player.textPositionX = 0;
-			this.player.textPositionY = 0;
-			this.player.textSize = {width: 150, height: 50};
+			this.player.textPositionX = this.player.sprite.x - this.player.textDimensions.width / 2;
+			this.player.textPositionY = this.player.PositionY - this.player.sprite.body.halfHeight - this.player.textDimensions.height - 5;
 			this.player.textColor = 'red';
-			this.player.scrollFactor.x = 0;
-			this.player.scrollFactor.y = 0;
-			//this.player.debugText = `X:${this.player.PositionX}, Y:${this.player.PositionY}`;
+			this.player.debugText = `X:${this.player.PositionX}, Y:${this.player.PositionY}`;
 			const motion = this.player.sprite.body.velocity.clone().normalize();
 			this.player.debugText = `Vector: ${motion.x.toFixed(2)}, ${motion.y.toFixed(2)}`;
 			

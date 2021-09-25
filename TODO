@@ -1,13 +1,13 @@
 ✔ Assign input keys to player class instance @done(21-09-25 17:10)
 ✔ Make camera controlled by mouse movement @done(21-09-25 00:58)
 ✔ Make player move by right mouse click @done(21-09-25 03:09)
+✔ Play correct player movement animation for each facing direction @done(21-09-25 20:42)
+✔ Fade out destination marker with tween @done(21-09-25 22:03)
+✔ Reuse destination marker gameobject instead of reinitializing @done(21-09-25 20:54)
 
 Prio from top to bottom
 ☐ Stop player movement when reaching destination vector
-✔ Play correct player movement animation for each facing direction @done(21-09-25 20:42)
 ☐ Make camera scroll speed accelerated
-☐ Fade out destination marker with tween
-☐ Reuse destination marker gameobject instead of reinitializing
 ☐ Implement mini map
 ☐ Implement shot ability and hotkey
 ☐ Render custom mouse pointer

@@ -41,7 +41,8 @@ export class Player extends DebugGameObject {
     private keyShoot?: Phaser.Input.Keyboard.Key;
     private mouse!: Phaser.Input.Pointer;
     private destination!: Phaser.Math.Vector2 | null;
-    private destination_sprite?: Phaser.GameObjects.Sprite;
+    private destinationSprite: Phaser.GameObjects.Sprite;
+    private destinationSpriteTween!: Phaser.Tweens.Tween;
     public sprite!: Phaser.Physics.Arcade.Sprite;
     public inputKeys: Array<GameInput> = [];
 
@@ -55,6 +56,20 @@ export class Player extends DebugGameObject {
         this._name = name;
         this.initializeInput();
         this.initializePlayerAnims();
+        this.destinationSprite = this.scene.add.sprite(0, 0, "cursor");
+        this.destinationSprite.setActive(false);
+        this.destinationSpriteTween = this.scene.tweens.add({
+            targets: this.destinationSprite,
+            alpha: {from: 1, to: 0},
+            loop: 0,
+            duration: 2000,
+            ease: Phaser.Math.Easing.Linear,
+            onComplete: () => {
+                this.destinationSprite
+                    .setActive(false)
+                    .setPosition(0, 0);
+            }
+        });
     }
 
     public initializePlayerAnims(){
@@ -104,11 +119,14 @@ export class Player extends DebugGameObject {
                 this.destination = new PHASER.Math.Vector2(this.mouse.worldX, this.mouse.worldY);
 				this.scene.physics.moveTo(this.sprite, this.destination.x, 
                                           this.destination.y, 200);
-                if(this.destination_sprite){
-                    this.destination_sprite.destroy();
-                }
-                this.destination_sprite = this.scene.add.sprite(this.destination.x, this.destination.y, "cursor");
-                this.destination_sprite.play("cursor_destination").setScale(2);
+                this.destinationSprite.setActive(true);
+                this.destinationSprite.setPosition(this.destination.x, this.destination.y);
+                this.destinationSprite
+                    .play("cursor_destination")
+                    .setScale(2)
+                    .setAlpha(1);
+                
+                this.destinationSpriteTween.restart();
             }
 		});
 
