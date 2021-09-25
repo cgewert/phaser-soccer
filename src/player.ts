@@ -33,7 +33,7 @@ export class Player extends DebugGameObject {
     public static readonly BALL_COLLIDER_TIMEOUT = 250;
     public static readonly BALL_SHOOT_POWER = 1800;
     private _name: string;
-    private _speed = 25;    // Determines players velocity on all axis.
+    private _speed = 200;    // Determines players velocity on all axis.
     private _ballCollider: PHASER.Physics.Arcade.Collider | null = null;
     private facingDirection: PHASER.Math.Vector2;
     private keyCenter?: Phaser.Input.Keyboard.Key;
@@ -118,7 +118,7 @@ export class Player extends DebugGameObject {
 			if(this.mouse.rightButtonReleased()){
                 this.destination = new PHASER.Math.Vector2(this.mouse.worldX, this.mouse.worldY);
 				this.scene.physics.moveTo(this.sprite, this.destination.x, 
-                                          this.destination.y, 200);
+                                          this.destination.y, this._speed);
                 this.destinationSprite.setActive(true);
                 this.destinationSprite.setPosition(this.destination.x, this.destination.y);
                 this.destinationSprite
@@ -210,7 +210,20 @@ export class Player extends DebugGameObject {
         } else {
             this.sprite.play(newAnimation);
         }
-        
+
+        // Stop player movement when target destination is reached.
+        if(!this.destination){
+            this.sprite.stop();
+            this.sprite
+                 .setVelocity(0)
+                 .setAcceleration(0);
+        } else {
+            // Calculate distance from sprite origin to destination
+            const distance = this.position.distance(this.destination);
+            if(distance <= 20) {
+                this.destination = null;
+            } 
+        }
     }
 
     public get PositionX(){
@@ -221,7 +234,7 @@ export class Player extends DebugGameObject {
         return Number.parseInt(`${this.sprite.y}`);
     }
 
-    public position(): PHASER.Math.Vector2 {
+    public get position(): PHASER.Math.Vector2 {
         return new PHASER.Math.Vector2(this.sprite.x, this.sprite.y);
     }
 
@@ -234,7 +247,7 @@ export class Player extends DebugGameObject {
      */
     public ballJugglePosition(): PHASER.Math.Vector2 {
         const ballOffset = 30;
-        let feetPos = this.position();
+        let feetPos = this.position;
         feetPos.y += this.sprite.body.halfHeight;
         let facing = this.direction();
         let ballPos = feetPos.add(facing.scale(ballOffset));
@@ -273,36 +286,13 @@ export class Player extends DebugGameObject {
             this.center();
 		}
 
-        // if(direction.length() <= 0){
-        //     this.sprite.stop();
-        //     return; // Stop animation instead of play new or update.
-        // }
-
-        // const newAnimation = Player.animationFor(direction);
-        // if(this.sprite.anims.getName() != newAnimation && newAnimation){
-        //     this.sprite.play(newAnimation);
-        // }
-
+        // Update player animation and move sprite.
+        this.move();
+        
         // TODO: Stop player movement when destination is reached.
         if(this.destination){
             // Update player animation
             this.move();
-
-            // if(this.destination.x <= this.sprite.body.x){
-            //     /*this.sprite
-            //         .setVelocityX(0)
-            //         .setAccelerationX(0);*/
-            //     //this.destination = null;
-            //     this.sprite.stop();
-            //     this.destination = null;
-            // }
-            // if(this.destination.y <= this.sprite.body.y){
-            //     /*this.sprite
-            //         .setVelocityY(0)
-            //         .setAccelerationY(0);*/
-            //     this.sprite.stop();
-            //     this.destination = null;
-            // }
         }
     }
 }

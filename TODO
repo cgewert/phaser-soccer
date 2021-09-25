@@ -4,9 +4,11 @@
 ✔ Play correct player movement animation for each facing direction @done(21-09-25 20:42)
 ✔ Fade out destination marker with tween @done(21-09-25 22:03)
 ✔ Reuse destination marker gameobject instead of reinitializing @done(21-09-25 20:54)
+✔ Stop player movement when reaching destination vector @done(21-09-25 22:47)
 
 Prio from top to bottom
-☐ Stop player movement when reaching destination vector
+☐ Reimplement Ball Juggling
+☐ Implement Zoom function on mouse wheel
 ☐ Make camera scroll speed accelerated
 ☐ Implement mini map
 ☐ Implement shot ability and hotkey
