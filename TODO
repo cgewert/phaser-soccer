@@ -5,13 +5,14 @@
 ✔ Fade out destination marker with tween @done(21-09-25 22:03)
 ✔ Reuse destination marker gameobject instead of reinitializing @done(21-09-25 20:54)
 ✔ Stop player movement when reaching destination vector @done(21-09-25 22:47)
+✔ Reimplement Ball Juggling @done(21-09-25 23:16)
 
 Prio from top to bottom
-☐ Reimplement Ball Juggling
+☐ Make player look in mouse pointer direction
+☐ Implement shot ability and hotkey
 ☐ Implement Zoom function on mouse wheel
 ☐ Make camera scroll speed accelerated
 ☐ Implement mini map
-☐ Implement shot ability and hotkey
 ☐ Render custom mouse pointer
 ☐ Render custom mouse pointer for screen border positions (UP, RIGHT, BOTTOM, LEFT)
 ☐ Make debugtexts detect off screen position and dynamically repositioning

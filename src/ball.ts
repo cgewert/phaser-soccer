@@ -19,7 +19,7 @@ export class Ball extends DebugGameObject {
         return this._owner;
     }
 
-    public updatePosition() {
+    public update() {
         if(this.owner){
             let pos = this.owner.ballJugglePosition();
             this.sprite.x = pos.x;

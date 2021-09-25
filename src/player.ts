@@ -45,6 +45,7 @@ export class Player extends DebugGameObject {
     private destinationSpriteTween!: Phaser.Tweens.Tween;
     public sprite!: Phaser.Physics.Arcade.Sprite;
     public inputKeys: Array<GameInput> = [];
+    public ballOffset: number = 30;
 
     public constructor(scene: Scene, name="Sir Knumskull") {
         super(scene);
@@ -187,6 +188,7 @@ export class Player extends DebugGameObject {
     // Calculate player walking animation based on his facing direction.
     public move() {
         const motionVector = this.sprite.body.velocity.clone().normalize();
+        this.facingDirection = motionVector;
         const currentAnimation = this.sprite.anims.getName();
         let newAnimation: PlayerAnimations = PlayerAnimations.up;
         
@@ -218,11 +220,10 @@ export class Player extends DebugGameObject {
                  .setVelocity(0)
                  .setAcceleration(0);
         } else {
-            // Calculate distance from sprite origin to destination
-            const distance = this.position.distance(this.destination);
-            if(distance <= 20) {
-                this.destination = null;
-            } 
+            // Delete destination vector when reached.
+            this.destination = this.position.distance(this.destination) <= 20 
+            ? null 
+            : this.destination;
         }
     }
 
@@ -243,15 +244,14 @@ export class Player extends DebugGameObject {
     }
 
     /**
-     * ballJugglePosition
+     * Calculate ball position, when in players possession.
      */
     public ballJugglePosition(): PHASER.Math.Vector2 {
-        const ballOffset = 30;
-        let feetPos = this.position;
-        feetPos.y += this.sprite.body.halfHeight;
-        let facing = this.direction();
-        let ballPos = feetPos.add(facing.scale(ballOffset));
-        return ballPos;
+        let feetPos = new Phaser.Math.Vector2(this.position.x, 
+                                              this.position.y + this.sprite.body.halfHeight);
+        let facing = this.direction().scale(this.ballOffset);
+
+        return feetPos.add(facing);
     }
 
     public setBallCollider(active: boolean) {
@@ -288,11 +288,5 @@ export class Player extends DebugGameObject {
 
         // Update player animation and move sprite.
         this.move();
-        
-        // TODO: Stop player movement when destination is reached.
-        if(this.destination){
-            // Update player animation
-            this.move();
-        }
     }
 }

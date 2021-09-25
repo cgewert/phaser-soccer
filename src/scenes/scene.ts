@@ -104,7 +104,7 @@ export class Scene extends PHASER.Scene {
 		this.player.update();
 
 		// TODO: refactor to ball class
-		this.ball.updatePosition()
+		this.ball.update();
 
 		// TODO: Scroll camera with acceleration
 		const camScrollSpeed = 2000;
