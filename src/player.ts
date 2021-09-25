@@ -20,10 +20,10 @@ export const enum PlayerActions {
  *  Describing all possible player animations.
  */
 export const enum PlayerAnimations {
-    right = "walk_right1",
-    left = "walk_left1",
-    up = "walk_up1",
-    down = "walk_down1",
+    right = "walk_right",
+    left = "walk_left",
+    up = "walk_up",
+    down = "walk_down",
 }
 
 /**
@@ -45,37 +45,57 @@ export class Player extends DebugGameObject {
     public sprite!: Phaser.Physics.Arcade.Sprite;
     public inputKeys: Array<GameInput> = [];
 
-    /**
-      * Returns an animation for a given direction.
-      * direction: PHASER.Math.Vector2
-      */
-    public static animationFor(direction: PHASER.Math.Vector2) {
-       if(direction.x > 0){
-           return PlayerAnimations.right;
-       }
-       else if(direction.x < 0){
-           return PlayerAnimations.left;
-       }
-       if(direction.y < 0){
-           return PlayerAnimations.up;
-       }
-       else if(direction.y > 0){
-           return PlayerAnimations.down;
-       }
-   
-       return null;
-   }
-
     public constructor(scene: Scene, name="Sir Knumskull") {
         super(scene);
-        this.sprite = this.scene.physics.add.sprite(50, 50, "character", 12);
+        this.sprite = this.scene.physics.add.sprite(250, 450, "character", 12);
         this.sprite.setScale(1.5)
             .setSize(this.sprite.width - 20, this.sprite.height - 10)
             .setCollideWorldBounds(true);
         this.facingDirection = new PHASER.Math.Vector2(0,0);
         this._name = name;
         this.initializeInput();
+        this.initializePlayerAnims();
     }
+
+    public initializePlayerAnims(){
+        const spriteSheetKey = 'character';
+
+		this.scene.anims.create({
+			key: PlayerAnimations.down,
+			frames: this.scene.anims.generateFrameNumbers(spriteSheetKey, {
+				frames: [0, 1, 2],
+			}),
+			frameRate: 8,
+			repeat: -1,
+		});
+
+		this.scene.anims.create({
+			key: PlayerAnimations.up,
+			frames: this.scene.anims.generateFrameNumbers(spriteSheetKey, {
+				frames: [18, 19, 20],
+			}),
+			frameRate: 8,
+			repeat: -1,
+		});
+
+		this.scene.anims.create({
+			key:  PlayerAnimations.left,
+			frames: this.scene.anims.generateFrameNumbers(spriteSheetKey, {
+				frames: [6, 7, 8],
+			}),
+			frameRate: 8,
+			repeat: -1,
+		});
+
+		this.scene.anims.create({
+			key: PlayerAnimations.right,
+			frames: this.scene.anims.generateFrameNumbers(spriteSheetKey, {
+				frames: [12, 13, 14],
+			}),
+			frameRate: 8,
+			repeat: -1,
+		});
+	}
 
     initializeInput() {
 		this.mouse = this.scene.input.activePointer;
@@ -146,25 +166,33 @@ export class Player extends DebugGameObject {
         this._name = value;
     }
 
-    public move(direction: PHASER.Math.Vector2){
-        let speedDirection = direction.scale(this.speed);
-        this.updateSpriteAnimation(speedDirection);
-        this.sprite.setVelocity(speedDirection.x, speedDirection.y);
-        if(speedDirection.length() > 0) {
-            this.facingDirection = speedDirection;
+    // Calculate player walking animation based on his facing direction.
+    public move() {
+        const motionVector = this.sprite.body.velocity.clone().normalize();
+        const currentAnimation = this.sprite.anims.getName();
+        let newAnimation: PlayerAnimations = PlayerAnimations.up;
+        
+        if(motionVector.x >= 0) {
+            newAnimation = PlayerAnimations.right;
         }
-    }
-
-    private updateSpriteAnimation(direction: PHASER.Math.Vector2){
-        if(direction.length() <= 0){
-            this.sprite.stop();
-            return; // Stop animation instead of play new or update.
+        if(motionVector.x < 0) {
+            newAnimation = PlayerAnimations.left;
         }
 
-        const newAnimation = Player.animationFor(direction);
-        if(this.sprite.anims.getName() != newAnimation && newAnimation){
+        // If movement on horizontal axis decreases check if we switch to up or down animations.
+        if(motionVector.x < 0.4 && motionVector.x > -0.4 && motionVector.y <= 0) {
+            newAnimation = PlayerAnimations.up;
+        }
+        if(motionVector.x < 0.4 && motionVector.x > -0.4 &&  motionVector.y >= 0) {
+            newAnimation = PlayerAnimations.down;
+        }
+
+        if(currentAnimation === newAnimation){
+            this.sprite.play(newAnimation, true);
+        } else {
             this.sprite.play(newAnimation);
         }
+        
     }
 
     public get PositionX(){
@@ -224,21 +252,39 @@ export class Player extends DebugGameObject {
 
     public update() {
         if(this.keyCenter?.isDown) {
-			this.center();
+            this.center();
 		}
+
+        // if(direction.length() <= 0){
+        //     this.sprite.stop();
+        //     return; // Stop animation instead of play new or update.
+        // }
+
+        // const newAnimation = Player.animationFor(direction);
+        // if(this.sprite.anims.getName() != newAnimation && newAnimation){
+        //     this.sprite.play(newAnimation);
+        // }
+
         // TODO: Stop player movement when destination is reached.
         if(this.destination){
-            if(this.destination.x <= this.sprite.body.x){
-                /*this.sprite
-                    .setVelocityX(0)
-                    .setAccelerationX(0);*/
-            }
-            if(this.destination.y <= this.sprite.body.y){
-                /*this.sprite
-                    .setVelocityY(0)
-                    .setAccelerationY(0);*/
-            }
-            //this.destination = null;
+            // Update player animation
+            this.move();
+
+            // if(this.destination.x <= this.sprite.body.x){
+            //     /*this.sprite
+            //         .setVelocityX(0)
+            //         .setAccelerationX(0);*/
+            //     //this.destination = null;
+            //     this.sprite.stop();
+            //     this.destination = null;
+            // }
+            // if(this.destination.y <= this.sprite.body.y){
+            //     /*this.sprite
+            //         .setVelocityY(0)
+            //         .setAccelerationY(0);*/
+            //     this.sprite.stop();
+            //     this.destination = null;
+            // }
         }
     }
 }

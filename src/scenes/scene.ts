@@ -1,7 +1,6 @@
 import * as PHASER from "phaser";
 import * as DAT from "dat.gui";
-//import { SoccerServer } from "../server/server"
-import { Player, PlayerActions, PlayerAnimations } from "../player";
+import { Player, PlayerAnimations } from "../player";
 import { Ball } from "../ball";
 export class Scene extends PHASER.Scene {
 	private static CONFIG: Phaser.Types.Scenes.SettingsConfig = {
@@ -55,7 +54,6 @@ export class Scene extends PHASER.Scene {
 		layerGoals.setCollisionByExclusion([-1], true);
 		layerGras.skipCull = true;
 		layerGoals.skipCull = true;
-		this.createPlayerAnims();
 		this.initializeBall();
 
 		// Create spritesheet for cursor
@@ -93,7 +91,8 @@ export class Scene extends PHASER.Scene {
 	 */
 	createDebugTexts() {
 		this.player.name = "PLAYER1";
-		this.player.debugText = this.player.name + ": " + this.player.debugText;
+		const motion = this.player.sprite.body.velocity.clone().normalize();
+		this.player.debugText = `Vector: ${motion}`;
 	}
 
 	/**
@@ -107,7 +106,7 @@ export class Scene extends PHASER.Scene {
 		// TODO: refactor to ball class
 		this.ball.updatePosition()
 
-		// Scroll camera
+		// TODO: Scroll camera with acceleration
 		const camScrollSpeed = 2000;
 		if(this.input.activePointer.x >= this.camera.x + this.camera.width - 100){
 			this.camera.scrollX += camScrollSpeed * delta / 1000;
@@ -123,9 +122,17 @@ export class Scene extends PHASER.Scene {
 		}
 
 		if(this.development){
-			this.player.textPositionX = this.player.sprite.x - this.player.textDimensions.width / 2;
-			this.player.textPositionY = this.player.PositionY - this.player.sprite.body.halfHeight - this.player.textDimensions.height - 5;
-			this.player.debugText = `X:${this.player.PositionX}, Y:${this.player.PositionY}`;
+			// this.player.textPositionX = this.player.sprite.x - this.player.textDimensions.width / 2;
+			// this.player.textPositionY = this.player.PositionY - this.player.sprite.body.halfHeight - this.player.textDimensions.height - 5;
+			this.player.textPositionX = 0;
+			this.player.textPositionY = 0;
+			this.player.textSize = {width: 150, height: 50};
+			this.player.textColor = 'red';
+			this.player.scrollFactor.x = 0;
+			this.player.scrollFactor.y = 0;
+			//this.player.debugText = `X:${this.player.PositionX}, Y:${this.player.PositionY}`;
+			const motion = this.player.sprite.body.velocity.clone().normalize();
+			this.player.debugText = `Vector: ${motion.x.toFixed(2)}, ${motion.y.toFixed(2)}`;
 			
 			this.ball.textPositionX = this.ball.sprite.x - this.ball.textDimensions.width / 2;
 			this.ball.textPositionY = this.ball.sprite.y - this.ball.sprite.body.halfHeight - this.ball.textDimensions.height - 5;
@@ -202,80 +209,6 @@ export class Scene extends PHASER.Scene {
 		const subFolder = folder.addFolder(name);
 		subFolder.add(vector, "x", min, max, step);
 		subFolder.add(vector, "y", min, max, step);
-	}
-
-	createPlayerAnims(){
-		this.anims.create({
-			key: PlayerAnimations.down,
-			frames: this.anims.generateFrameNumbers("character", {
-				frames: [0, 1, 2],
-			}),
-			frameRate: 8,
-			repeat: -1,
-		});
-
-		this.anims.create({
-			key: "walk_down2",
-			frames: this.anims.generateFrameNumbers("character", {
-				frames: [3, 4, 5],
-			}),
-			frameRate: 8,
-			repeat: -1,
-		});
-
-		this.anims.create({
-			key: PlayerAnimations.up,
-			frames: this.anims.generateFrameNumbers("character", {
-				frames: [18, 19, 20],
-			}),
-			frameRate: 8,
-			repeat: -1,
-		});
-
-		this.anims.create({
-			key: "walk_up2",
-			frames: this.anims.generateFrameNumbers("character", {
-				frames: [21, 22, 23],
-			}),
-			frameRate: 8,
-			repeat: -1,
-		});
-
-		this.anims.create({
-			key:  PlayerAnimations.left,
-			frames: this.anims.generateFrameNumbers("character", {
-				frames: [6, 7, 8],
-			}),
-			frameRate: 8,
-			repeat: -1,
-		});
-
-		this.anims.create({
-			key: "walk_left2",
-			frames: this.anims.generateFrameNumbers("character", {
-				frames: [9, 10, 11],
-			}),
-			frameRate: 8,
-			repeat: -1,
-		});
-
-		this.anims.create({
-			key: PlayerAnimations.right,
-			frames: this.anims.generateFrameNumbers("character", {
-				frames: [12, 13, 14],
-			}),
-			frameRate: 8,
-			repeat: -1,
-		});
-
-		this.anims.create({
-			key: "walk_right2",
-			frames: this.anims.generateFrameNumbers("character", {
-				frames: [15, 16, 17],
-			}),
-			frameRate: 8,
-			repeat: -1,
-		});
 	}
 
 	/* Initializes a physics body and its properties. */
