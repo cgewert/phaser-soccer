@@ -26,7 +26,6 @@ export class Scene extends PHASER.Scene {
 	}
 
 	public preload() {
-		//const server = new SoccerServer();
 		this.physics.world.setBounds(0, 0, 6144, 2048);
 		this.input.mouse.disableContextMenu();
 		this.load.image("tiles1", "assets/gfx/tiles/Grassland.png");
@@ -54,7 +53,7 @@ export class Scene extends PHASER.Scene {
 		layerGoals.setCollisionByExclusion([-1], true);
 		layerGras.skipCull = true;
 		layerGoals.skipCull = true;
-		this.initializeBall();
+		this.ball = new Ball(this);
 
 		// Create spritesheet for cursor
 		this.anims.create({
@@ -102,8 +101,6 @@ export class Scene extends PHASER.Scene {
 	 */
 	public update(_time: number, delta: number) {
 		this.player.update();
-
-		// TODO: refactor to ball class
 		this.ball.update();
 
 		// TODO: Scroll camera with acceleration
@@ -204,20 +201,5 @@ export class Scene extends PHASER.Scene {
 		const subFolder = folder.addFolder(name);
 		subFolder.add(vector, "x", min, max, step);
 		subFolder.add(vector, "y", min, max, step);
-	}
-
-	/* Initializes a physics body and its properties. */
-	initializeBall() {
-		let newBall = this.physics.add.sprite(-50 + 16 * 64 - 10, 7 * 64, "ball", 0)
-			.setScale(0.13);
-		newBall.body
-			.setFriction(1, 1)
-			.setBounce(.5, .5)
-			.setDrag(230, 230)
-			.setCollideWorldBounds(true)
-			.setCircle(117)
-			.debugShowVelocity = true;
-
-		this.ball = new Ball(this, newBall);
 	}
 }
