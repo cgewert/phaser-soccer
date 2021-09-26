@@ -39,6 +39,7 @@ export class Scene extends PHASER.Scene {
 			frameWidth: 48,
 			frameHeight: 64,
 		});
+		this.load.image("circle_marker", "assets/gfx/circle_marker.png");
 	}
 
 	public create() {
