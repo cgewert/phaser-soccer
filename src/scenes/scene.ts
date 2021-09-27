@@ -20,6 +20,7 @@ export class Scene extends PHASER.Scene {
 	public ball!: Ball;
 	private dat = new DAT.GUI({ name: "Soccer debug GUI" });
 	private development = true ;
+	private isNotDefaultCursor = false;
 
 	constructor() {
 		super(Scene.CONFIG);
@@ -83,6 +84,7 @@ export class Scene extends PHASER.Scene {
 		this.camera.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
 		this.camera.setRoundPixels(true);
 		this.createDatGUI();
+		this.input.setDefaultCursor("url(assets/gfx/cursors/default.png), pointer");
 	}
 
 	/*
@@ -104,19 +106,35 @@ export class Scene extends PHASER.Scene {
 		this.player.update();
 		this.ball.update();
 
-		// TODO: Scroll camera with acceleration
 		const camScrollSpeed = 2000;
-		if(this.input.activePointer.x >= this.camera.x + this.camera.width - 100){
+		const camOffset = 10;
+		
+		if(this.isNotDefaultCursor){
+			this.input.setDefaultCursor("url(assets/gfx/cursors/default.png), pointer");
+		}
+		// Right Bounds
+		if(this.input.activePointer.x >= this.camera.x + this.camera.width - 40){
 			this.camera.scrollX += camScrollSpeed * delta / 1000;
+			this.input.setDefaultCursor("url(assets/gfx/cursors/scroll_indicator_right.png), pointer");
+			this.updateCursorState();
 		}
-		if(this.input.activePointer.x <= this.camera.x + 100){
+		// Left Bounds
+		if(this.input.activePointer.x <= this.camera.x + camOffset){
 			this.camera.scrollX -= camScrollSpeed * delta / 1000;
+			this.input.setDefaultCursor("url(assets/gfx/cursors/scroll_indicator_left.png), pointer");
+			this.updateCursorState();
 		}
-		if(this.input.activePointer.y >= this.camera.y + this.camera.height - 100){
+		// Bottom Bounds
+		if(this.input.activePointer.y >= this.camera.y + this.camera.height - 40){
 			this.camera.scrollY += camScrollSpeed * delta / 1000;
+			this.input.setDefaultCursor("url(assets/gfx/cursors/scroll_indicator_down.png), pointer");
+			this.updateCursorState();
 		}
-		if(this.input.activePointer.y <= this.camera.y + 100){
+		// Top Bounds
+		if(this.input.activePointer.y <= this.camera.y + camOffset){
 			this.camera.scrollY -= camScrollSpeed * delta / 1000;
+			this.input.setDefaultCursor("url(assets/gfx/cursors/scroll_indicator_up.png), pointer");
+			this.updateCursorState();
 		}
 
 		if(this.development){
@@ -202,5 +220,11 @@ export class Scene extends PHASER.Scene {
 		const subFolder = folder.addFolder(name);
 		subFolder.add(vector, "x", min, max, step);
 		subFolder.add(vector, "y", min, max, step);
+	}
+
+	private updateCursorState(){
+		if(!this.isNotDefaultCursor){
+			this.isNotDefaultCursor = true;
+		}
 	}
 }

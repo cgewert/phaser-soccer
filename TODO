@@ -7,14 +7,16 @@
 ✔ Stop player movement when reaching destination vector @done(21-09-25 22:47)
 ✔ Reimplement Ball Juggling @done(21-09-25 23:16)
 ✔ Make player look in mouse pointer direction @done(21-09-26 00:44)
+✘ Make camera scroll speed accelerated @cancelled(21-09-27 20:46)
+✔ Render custom mouse pointer @done(21-09-27 20:46)
+✔ Render custom mouse pointer for screen border positions (UP, RIGHT, BOTTOM, LEFT) @done(21-09-27 20:46)
 
 Prio from top to bottom
 ☐ Implement shot ability and hotkey @started(21-09-26 18:44)
 ☐ Implement Zoom function on mouse wheel
-☐ Make camera scroll speed accelerated
+☐ Make GUI assets
+☐ Implement GUI
 ☐ Implement mini map
-☐ Render custom mouse pointer
-☐ Render custom mouse pointer for screen border positions (UP, RIGHT, BOTTOM, LEFT)
 ☐ Make debugtexts detect off screen position and dynamically repositioning
 ☐ Create game server application
 ☐ Refactor application to client application
