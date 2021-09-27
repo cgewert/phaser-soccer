@@ -30,7 +30,7 @@ export const enum PlayerAnimations {
 export class Player extends DebugGameObject {
     public static readonly BALL_COLLIDER_TIMEOUT = 250;
     public static readonly BALL_SHOOT_POWER = 1000;
-    public static readonly SHOOT_CIRCLE_ELEMENTS = 32;
+    public static readonly SHOOT_CIRCLE_ELEMENTS = 63;
     public static readonly SHOOT_CIRCLE_RADIUS = 300;
     private _name: string;
     private _speed = 200;    // Determines players velocity on all axis.
@@ -49,7 +49,7 @@ export class Player extends DebugGameObject {
     public sprite!: Phaser.Physics.Arcade.Sprite;
     public inputKeys: Array<GameInput> = [];
     public ballOffset: number = 30;
-    private isShotState =  true;
+    private isShotState =  false;
     private shot_circle = new PHASER.Geom.Circle(0, 0, Player.SHOOT_CIRCLE_RADIUS);
     private circleElements = this.scene.physics.add.group({
         key: "circle_marker", 
@@ -179,6 +179,10 @@ export class Player extends DebugGameObject {
 		this.keySpecialB = this.inputKeys.find((value, idx, obj) => {return value.name === PlayerActions.special_b})?.inputKey
 		this.keyShoot = this.inputKeys.find((value, idx, obj) => {return value.name === PlayerActions.shoot})?.inputKey
 		this.keyPush = this.inputKeys.find((value, idx, obj) => {return value.name === PlayerActions.push})?.inputKey
+        this.keyShoot?.setEmitOnRepeat(false);
+        this.keyShoot!.addListener("down", () => {
+            this.updateShootCircle();
+        });
 	}
 
     public get ballCollider(): PHASER.Physics.Arcade.Collider | null {
@@ -308,12 +312,15 @@ export class Player extends DebugGameObject {
         );
         const playerPosition = this.position;
         this.shot_circle.setPosition(playerPosition.x, playerPosition.y);
-        
+        //this.circleElements.rotateAroundDistance(this.position, 0.02, 200);
+
         if(this.isShotState){
             this.circleElements.setActive(true);
             this.circleElements.setVisible(true);
             Phaser.Actions.PlaceOnCircle(this.circleElements.getChildren(), this.shot_circle);
-            // this.circleElements.rotateAround(this.position, 0.02);
+        } else {
+            this.circleElements.setActive(false);
+            this.circleElements.setVisible(false);
         }
 
         if(this.keyCenter?.isDown) {
@@ -333,10 +340,6 @@ export class Player extends DebugGameObject {
                 this.sprite.setFrame(7); // Look left
                 this.shootWhileStillstanding(true);
             }
-        } else {
-            if(this.keyShoot?.isDown) {
-                this.shoot();
-            }
         }
     }
 
@@ -346,5 +349,11 @@ export class Player extends DebugGameObject {
             // Let player lose ball possession.
 			this.scene.ball.owner = null;
         }
+    }
+
+    private updateShootCircle(){
+        this.isShotState = !this.isShotState;
+        this.circleElements.setVisible(this.isShotState);
+        this.circleElements.setActive(this.isShotState);
     }
 }
