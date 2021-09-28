@@ -45,7 +45,7 @@ export class Player extends DebugGameObject {
     private destination!: Phaser.Math.Vector2 | null;
     private destinationSprite: Phaser.GameObjects.Sprite;
     private destinationSpriteTween!: Phaser.Tweens.Tween;
-    // private shootCircleTween!: Phaser.Tweens.Tween;
+    private fadingTween!: Phaser.Tweens.Tween;
     public sprite!: Phaser.Physics.Arcade.Sprite;
     public inputKeys: Array<GameInput> = [];
     public ballOffset: number = 30;
@@ -54,9 +54,10 @@ export class Player extends DebugGameObject {
     private circleElements = this.scene.physics.add.group({
         key: "circle_marker", 
         repeat: Player.SHOOT_CIRCLE_ELEMENTS,
-        setAlpha: {value: 0.8},
+        setAlpha: {value: 1},
         setRotation: {value: Math.PI / 2, step: Math.PI * 2 / Player.SHOOT_CIRCLE_ELEMENTS}
     });
+    private graphics!: Phaser.GameObjects.Graphics;
 
     public constructor(scene: Scene, name="Sir Knumskull") {
         super(scene);
@@ -83,16 +84,17 @@ export class Player extends DebugGameObject {
             }
         });
         Phaser.Actions.PlaceOnCircle(this.circleElements.getChildren(), this.shot_circle);
-        // this.shootCircleTween = this.scene.tweens.addCounter({
-        //     from: 220,
-        //     to: 100,
-        //     duration: 3000,
-        //     delay: 2000,
-        //     ease: 'Sine.easeInOut',
-        //     repeat: -1,
-        //     yoyo: false
-        // });
+        this.fadingTween = this.scene.tweens.addCounter({
+            from: 190,
+            to: 128,
+            duration: 700,
+            delay: 0,
+            ease: 'Linear',
+            repeat: -1,
+            yoyo: true
+        });
         this.destination = null;
+        this.graphics = this.scene.add.graphics();
     }
 
     public initializePlayerAnims(){
@@ -150,6 +152,9 @@ export class Player extends DebugGameObject {
                     .setAlpha(1);
                 
                 this.destinationSpriteTween.restart();
+            }
+			if(this.mouse.leftButtonReleased() && this.isShotState){
+                this.shoot();
             }
 		});
 
@@ -302,6 +307,7 @@ export class Player extends DebugGameObject {
 
 			// Let player lose ball possession.
 			this.scene.ball.owner = null;
+            this.isShotState = false;
 		}	
 	}
 
@@ -311,16 +317,16 @@ export class Player extends DebugGameObject {
             this.scene.input.activePointer.worldY
         );
         const playerPosition = this.position;
-        this.shot_circle.setPosition(playerPosition.x, playerPosition.y);
-        //this.circleElements.rotateAroundDistance(this.position, 0.02, 200);
 
-        if(this.isShotState){
-            this.circleElements.setActive(true);
-            this.circleElements.setVisible(true);
-            Phaser.Actions.PlaceOnCircle(this.circleElements.getChildren(), this.shot_circle);
+        if(this.isShotState) {
+            this.drawShootCircle();
+            //this.shot_circle.setPosition(playerPosition.x, playerPosition.y);
+            //Phaser.Actions.PlaceOnCircle(this.circleElements.getChildren(), this.shot_circle);
         } else {
             this.circleElements.setActive(false);
             this.circleElements.setVisible(false);
+            this.graphics.setActive(false);
+            this.graphics.setVisible(false);
         }
 
         if(this.keyCenter?.isDown) {
@@ -334,26 +340,35 @@ export class Player extends DebugGameObject {
         if(this.destination === null){
             if(playerPosition.x < pointerPosition.x) {
                 this.sprite.setFrame(13); // Look right
-                this.shootWhileStillstanding(false);
             }
             if(playerPosition.x > pointerPosition.x) {
                 this.sprite.setFrame(7); // Look left
-                this.shootWhileStillstanding(true);
             }
-        }
-    }
-
-    private shootWhileStillstanding(left: boolean){
-        if(this.keyShoot?.isDown && this.scene.ball.owner === this) {
-            this.scene.ball.sprite.setVelocityX(Player.BALL_SHOOT_POWER * (left ? -1 : 1));
-            // Let player lose ball possession.
-			this.scene.ball.owner = null;
         }
     }
 
     private updateShootCircle(){
-        this.isShotState = !this.isShotState;
-        this.circleElements.setVisible(this.isShotState);
-        this.circleElements.setActive(this.isShotState);
+        if(this.scene.ball.owner === this){
+            this.isShotState = !this.isShotState;
+            this.graphics.setActive(true);
+            this.graphics.setVisible(true);
+            this.graphics.setAlpha(0.5);
+            // this.circleElements.setVisible(this.isShotState);
+            // this.circleElements.setActive(this.isShotState);
+            this.circleElements.setVisible(false);
+            this.circleElements.setActive(false);
+        }
+    }
+
+    private drawShootCircle(){
+        const decimalValue = this.fadingTween.getValue().toFixed(0);
+        const hexDigit = Number.parseInt(decimalValue).toString(16);
+        const hexString = `0x${hexDigit}${hexDigit}${hexDigit}`;
+        
+        this.graphics.clear();
+        this.graphics.fillStyle(Number.parseInt(hexString), 0.7);
+        this.graphics.setX(0);
+        this.graphics.setY(0);
+        this.graphics.fillCircle(this.PositionX, this.PositionY, 300);
     }
 }
