@@ -21,6 +21,8 @@ export class Scene extends PHASER.Scene {
 	private dat = new DAT.GUI({ name: "Soccer debug GUI" });
 	private development = true ;
 	private isNotDefaultCursor = false;
+	private roundTime = 1000 * 60 * 5;
+	private textRoundTime!: Phaser.GameObjects.Text;
 
 	constructor() {
 		super(Scene.CONFIG);
@@ -41,6 +43,8 @@ export class Scene extends PHASER.Scene {
 			frameHeight: 64,
 		});
 		this.load.image("circle_marker", "assets/gfx/circle_marker.png");
+		this.load.image("ui_shoot", "assets/gfx/ui/boot1.png");
+		this.load.image("ui_skills", "assets/gfx/ui/skills.png");
 	}
 
 	public create() {
@@ -85,6 +89,13 @@ export class Scene extends PHASER.Scene {
 		this.camera.setRoundPixels(true);
 		this.createDatGUI();
 		this.input.setDefaultCursor("url(assets/gfx/cursors/default.png), pointer");
+		this.textRoundTime = this.add.text(
+			this.camera.width / 2, 
+			20,
+			"1st 0:0 19:39", 
+			{ fontFamily: 'WorkSans', fontSize: "42px", stroke: 'black', strokeThickness: 2}
+		).setScrollFactor(0);
+		this.initializeUI();
 	}
 
 	/*
@@ -103,6 +114,14 @@ export class Scene extends PHASER.Scene {
 	 * @param delta - Time in ms since last update call.
 	 */
 	public update(_time: number, delta: number) {
+		this.roundTime -= delta;
+		this.roundTime = Math.max(0, this.roundTime);
+		let secs = this.roundTime / 1000;
+		const mins = secs / 60;
+		secs = secs % 60;
+		const formattedTime = `${mins.toFixed().padStart(2, "0")}:${secs.toFixed().padStart(2, "0")}`;
+
+		this.textRoundTime.setText(`1st 0:0 ${formattedTime}`);
 		this.player.update();
 		this.ball.update();
 
@@ -227,4 +246,17 @@ export class Scene extends PHASER.Scene {
 			this.isNotDefaultCursor = true;
 		}
 	}
+
+	private initializeUI() {
+		const ui_skills = this.add.image(this.camera.width / 2, this.camera.height - 64, "ui_skills")
+			.setScrollFactor(0)
+			.setScale(5,5)
+			.setAlpha(0.8);
+		const width = ui_skills.width;
+		const height = ui_skills.height;
+		ui_skills.setPosition(this.camera.width / 2 - width / 2, this.camera.height - 2 * height);
+		const boots = this.add.image(0, 0, "ui_shoot").setScrollFactor(0).setScale(2);
+		boots.setPosition(ui_skills.x, ui_skills.y + 76);
+	}
 }
+

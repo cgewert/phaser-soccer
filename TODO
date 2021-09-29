@@ -11,11 +11,11 @@
 ✔ Render custom mouse pointer @done(21-09-27 20:46)
 ✔ Render custom mouse pointer for screen border positions (UP, RIGHT, BOTTOM, LEFT) @done(21-09-27 20:46)
 ✔ Animate shoot visualization @done(21-09-28 23:27)
+✔ Implement shot ability and hotkey @started(21-09-26 18:44) @done(21-09-29 20:16) @lasted(3d1h32m7s)
 
 Prio from top to bottom
-☐ Implement shot ability and hotkey @started(21-09-26 18:44)
-☐ Make GUI assets
-☐ Implement GUI
+☐ Make GUI assets @started(21-09-29 20:37)
+☐ Implement GUI @started(21-09-29 20:37)
 ☐ Implement Zoom function on mouse wheel
 ☐ Implement mini map
 ☐ Make debugtexts detect off screen position and dynamically repositioning

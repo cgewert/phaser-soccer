@@ -45,6 +45,7 @@ module.exports = {
         {from: '*.css', context: 'src/'},
         {from: 'src/index.html'},
         {from: 'src/assets/gfx', to: 'assets/gfx/'},
+        {from: 'src/assets/fonts', to: 'assets/fonts/'},
         {from: '**/*.json', context: 'src/assets/maps', to: 'assets/maps'}
       ],
     }),
