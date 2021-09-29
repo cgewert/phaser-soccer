@@ -50,13 +50,6 @@ export class Player extends DebugGameObject {
     public inputKeys: Array<GameInput> = [];
     public ballOffset: number = 30;
     private isShotState =  false;
-    private shot_circle = new PHASER.Geom.Circle(0, 0, Player.SHOOT_CIRCLE_RADIUS);
-    private circleElements = this.scene.physics.add.group({
-        key: "circle_marker", 
-        repeat: Player.SHOOT_CIRCLE_ELEMENTS,
-        setAlpha: {value: 1},
-        setRotation: {value: Math.PI / 2, step: Math.PI * 2 / Player.SHOOT_CIRCLE_ELEMENTS}
-    });
     private graphics!: Phaser.GameObjects.Graphics;
 
     public constructor(scene: Scene, name="Sir Knumskull") {
@@ -83,7 +76,6 @@ export class Player extends DebugGameObject {
                     .setPosition(0, 0);
             }
         });
-        Phaser.Actions.PlaceOnCircle(this.circleElements.getChildren(), this.shot_circle);
         this.fadingTween = this.scene.tweens.addCounter({
             from: 0.7,
             to: 0.35,
@@ -320,11 +312,7 @@ export class Player extends DebugGameObject {
 
         if(this.isShotState) {
             this.drawShootCircle();
-            //this.shot_circle.setPosition(playerPosition.x, playerPosition.y);
-            //Phaser.Actions.PlaceOnCircle(this.circleElements.getChildren(), this.shot_circle);
         } else {
-            this.circleElements.setActive(false);
-            this.circleElements.setVisible(false);
             this.graphics.setActive(false);
             this.graphics.setVisible(false);
         }
@@ -353,10 +341,6 @@ export class Player extends DebugGameObject {
             this.graphics.setActive(true);
             this.graphics.setVisible(true);
             this.graphics.setAlpha(0.5);
-            // this.circleElements.setVisible(this.isShotState);
-            // this.circleElements.setActive(this.isShotState);
-            this.circleElements.setVisible(false);
-            this.circleElements.setActive(false);
         }
     }
 
@@ -364,7 +348,6 @@ export class Player extends DebugGameObject {
         const value = this.fadingTween.getValue();
         
         this.graphics.clear();
-        // this.graphics.fillStyle(0x000088, value);
         this.graphics.fillStyle(0x333333, value);
         this.graphics.setX(0);
         this.graphics.setY(0);
