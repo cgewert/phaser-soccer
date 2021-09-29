@@ -85,8 +85,8 @@ export class Player extends DebugGameObject {
         });
         Phaser.Actions.PlaceOnCircle(this.circleElements.getChildren(), this.shot_circle);
         this.fadingTween = this.scene.tweens.addCounter({
-            from: 190,
-            to: 128,
+            from: 0.7,
+            to: 0.35,
             duration: 700,
             delay: 0,
             ease: 'Linear',
@@ -361,12 +361,11 @@ export class Player extends DebugGameObject {
     }
 
     private drawShootCircle(){
-        const decimalValue = this.fadingTween.getValue().toFixed(0);
-        const hexDigit = Number.parseInt(decimalValue).toString(16);
-        const hexString = `0x${hexDigit}${hexDigit}${hexDigit}`;
+        const value = this.fadingTween.getValue();
         
         this.graphics.clear();
-        this.graphics.fillStyle(Number.parseInt(hexString), 0.7);
+        // this.graphics.fillStyle(0x000088, value);
+        this.graphics.fillStyle(0x333333, value);
         this.graphics.setX(0);
         this.graphics.setY(0);
         this.graphics.fillCircle(this.PositionX, this.PositionY, 300);
