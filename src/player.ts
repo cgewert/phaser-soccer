@@ -49,7 +49,7 @@ export class Player extends DebugGameObject {
     public sprite!: Phaser.Physics.Arcade.Sprite;
     public inputKeys: Array<GameInput> = [];
     public ballOffset: number = 30;
-    private isShotState =  false;
+    private isShotState = false;
     private graphics!: Phaser.GameObjects.Graphics;
 
     public constructor(scene: Scene, name="Sir Knumskull") {
@@ -288,14 +288,22 @@ export class Player extends DebugGameObject {
 
     shoot() {
 		if(this.scene.ball.owner === this){
-			const playerDirection = this.direction();
+            // Shoot to mouse pointer
+            const pointerX = this.scene.input.activePointer.worldX;
+            const pointerY = this.scene.input.activePointer.worldY;
+            const direction = new Phaser.Math.Vector2(pointerX - this.position.x, pointerY - this.PositionY).normalize();
+            let distance = this.position.distance({x: pointerX, y: pointerY});
+            distance = Math.min(Player.SHOOT_CIRCLE_RADIUS, distance);
+            distance = distance / Player.SHOOT_CIRCLE_RADIUS;
+
 			this.setBallCollider(false);
 			const lastOwnerRef = this;
 			setTimeout(() => {
 				lastOwnerRef?.setBallCollider(true);
 			}, Player.BALL_COLLIDER_TIMEOUT);
-			this.scene.ball.sprite.setVelocity(Player.BALL_SHOOT_POWER * playerDirection.x, 
-										 Player.BALL_SHOOT_POWER * playerDirection.y);
+
+			this.scene.ball.sprite.setVelocity(Player.BALL_SHOOT_POWER * distance * direction.x, 
+										 Player.BALL_SHOOT_POWER * distance * direction.y);
 
 			// Let player lose ball possession.
 			this.scene.ball.owner = null;
@@ -346,11 +354,8 @@ export class Player extends DebugGameObject {
 
     private drawShootCircle(){
         const value = this.fadingTween.getValue();
-        
         this.graphics.clear();
         this.graphics.fillStyle(0x333333, value);
-        this.graphics.setX(0);
-        this.graphics.setY(0);
-        this.graphics.fillCircle(this.PositionX, this.PositionY, 300);
+        this.graphics.fillCircle(this.PositionX, this.PositionY, Player.SHOOT_CIRCLE_RADIUS);
     }
 }
