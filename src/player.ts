@@ -39,7 +39,7 @@ export class Player extends DebugGameObject {
     private keyCenter?: Phaser.Input.Keyboard.Key;
     private keySpecialA?: Phaser.Input.Keyboard.Key;
     private keySpecialB?: Phaser.Input.Keyboard.Key;
-    private keyShoot?: Phaser.Input.Keyboard.Key;
+    public keyShoot?: Phaser.Input.Keyboard.Key;
     private keyPush?: Phaser.Input.Keyboard.Key;
     private mouse!: Phaser.Input.Pointer;
     private destination!: Phaser.Math.Vector2 | null;
@@ -51,6 +51,7 @@ export class Player extends DebugGameObject {
     public ballOffset: number = 30;
     private isShotState = false;
     private graphics!: Phaser.GameObjects.Graphics;
+    public light!: Phaser.GameObjects.Light;
 
     public constructor(scene: Scene, name="Sir Knumskull") {
         super(scene);
@@ -317,6 +318,7 @@ export class Player extends DebugGameObject {
             this.scene.input.activePointer.worldY
         );
         const playerPosition = this.position;
+        this.light?.setPosition(this.position.x, this.position.y);
 
         if(this.isShotState) {
             this.drawShootCircle();

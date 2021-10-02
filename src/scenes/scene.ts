@@ -3,6 +3,10 @@ import * as DAT from "dat.gui";
 import { Player, PlayerAnimations } from "../player";
 import { Ball } from "../ball";
 export class Scene extends PHASER.Scene {
+	public static CAMERA_ZOOM_VELOCITY = 0.080;
+	public static CAMERA_ZOOM_MAXIMUM = 1.25;
+	public static CAMERA_ZOOM_MINIMUM = 0.5;
+
 	private static CONFIG: Phaser.Types.Scenes.SettingsConfig = {
 		key: "scene",
 		physics: {
@@ -23,6 +27,8 @@ export class Scene extends PHASER.Scene {
 	private isNotDefaultCursor = false;
 	private roundTime = 1000 * 60 * 5;
 	private textRoundTime!: Phaser.GameObjects.Text;
+	private scoreLeft = 0;
+	private scoreRight = 0;
 
 	constructor() {
 		super(Scene.CONFIG);
@@ -54,12 +60,19 @@ export class Scene extends PHASER.Scene {
 			tileHeight: 64,
 		});
 		const tileSet = map.addTilesetImage("Grassland", "tiles1");
-		const layerGras = map.createLayer("Background", tileSet, 0, 0);
-		const layerGoals = map.createLayer("Foreground", tileSet, 0, 0);
+		const layerGras = map.createLayer("Background", tileSet, 0, 0)//.setPipeline('Light2D');
+		const layerGoalColliderLeft = map.createLayer("goalColliderLeft", tileSet, 0, 0);
+		const layerGoalColliderRight = map.createLayer("goalColliderRight", tileSet, 0, 0);
+		const layerGoals = map.createLayer("Foreground", tileSet, 0, 0)//.setPipeline('Light2D');
 		layerGoals.setCollisionByExclusion([-1], true);
+		layerGoalColliderLeft.setCollisionByExclusion([-1], true);
+		layerGoalColliderRight.setCollisionByExclusion([-1], true);
 		layerGras.skipCull = true;
 		layerGoals.skipCull = true;
 		this.ball = new Ball(this);
+		this.ball.sprite.setName("Ball");
+		// this.lights.enable();
+    	// this.lights.setAmbientColor(0xffffff);
 
 		// Create spritesheet for cursor
 		this.anims.create({
@@ -72,6 +85,7 @@ export class Scene extends PHASER.Scene {
 		});
 		// Create a player instance.
 		this.player = new Player(this);
+		//this.player.light = this.lights.addLight(0, 0, 150, 0x00ff00);
 		// Register player collision handlers.
 		this.physics.add.collider(this.player.sprite, layerGoals);
 		this.player.ballCollider = this.physics.add.overlap(this.player.sprite, 
@@ -81,12 +95,26 @@ export class Scene extends PHASER.Scene {
 				this.ball.sprite.setVelocity(0);
 				this.ball.sprite.setAcceleration(0);
 			});
+		
+		this.physics.add.collider(this.ball.sprite, layerGoalColliderRight, () => {			
+			this.scoreLeft++;
+		});
+		this.physics.add.collider(this.ball.sprite, layerGoalColliderLeft, () => {			
+			this.scoreRight++;
+		});
 
 		this.createDebugTexts();
 		this.physics.add.collider(layerGoals, this.ball.sprite);
 		this.camera = this.cameras.main;
 		this.camera.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
 		this.camera.setRoundPixels(true);
+		this.input.mouse.preventDefaultWheel = true; 
+		this.input.on('wheel', (pointer: any, over: any, deltaX: number, deltaY: number, deltaZ: number) => {
+			this.camera.setZoom(this.camera.zoom - Scene.CAMERA_ZOOM_VELOCITY * Math.sign(deltaY));
+			this.camera.zoom = Phaser.Math.Clamp(
+				this.camera.zoom, Scene.CAMERA_ZOOM_MINIMUM, Scene.CAMERA_ZOOM_MAXIMUM
+			);
+		});
 		this.createDatGUI();
 		this.input.setDefaultCursor("url(assets/gfx/cursors/default.png), pointer");
 		this.textRoundTime = this.add.text(
@@ -121,7 +149,7 @@ export class Scene extends PHASER.Scene {
 		secs = secs % 60;
 		const formattedTime = `${mins.toFixed().padStart(2, "0")}:${secs.toFixed().padStart(2, "0")}`;
 
-		this.textRoundTime.setText(`1st 0:0 ${formattedTime}`);
+		this.textRoundTime.setText(`1st ${this.scoreLeft}:${this.scoreRight} ${formattedTime}`);
 		this.player.update();
 		this.ball.update();
 
@@ -248,15 +276,19 @@ export class Scene extends PHASER.Scene {
 	}
 
 	private initializeUI() {
-		const ui_skills = this.add.image(this.camera.width / 2, this.camera.height - 64, "ui_skills")
+		const ui_skills = this.add.image(this.camera.width / 2, this.camera.height, "ui_skills")
 			.setScrollFactor(0)
-			.setScale(5,5)
-			.setAlpha(0.8);
+			.setScale(1,1)
+			.setAlpha(1.0);
 		const width = ui_skills.width;
 		const height = ui_skills.height;
-		ui_skills.setPosition(this.camera.width / 2 - width / 2, this.camera.height - 2 * height);
-		const boots = this.add.image(0, 0, "ui_shoot").setScrollFactor(0).setScale(2);
-		boots.setPosition(ui_skills.x, ui_skills.y + 76);
+		ui_skills.setPosition(this.camera.width / 2, this.camera.height - ui_skills.displayHeight / 2 + 12);
+		const boots = this.add.image(0, 0, "ui_shoot").setScrollFactor(0).setScale(2).setTint(0x00ff00);
+		//boots.setPosition(ui_skills.x, ui_skills.y + 76);
+		Phaser.Display.Align.In.Center(boots, ui_skills);
+		const labelShootKey = this.add.text(0,0,"V", { fontFamily: 'WorkSans', fontSize: "32px", stroke: 'black', strokeThickness: 2, color: "white"});
+		labelShootKey.setScrollFactor(0);
+		Phaser.Display.Align.In.BottomCenter(labelShootKey, boots);
 	}
 }
 

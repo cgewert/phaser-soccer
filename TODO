@@ -12,12 +12,14 @@
 ✔ Render custom mouse pointer for screen border positions (UP, RIGHT, BOTTOM, LEFT) @done(21-09-27 20:46)
 ✔ Animate shoot visualization @done(21-09-28 23:27)
 ✔ Implement shot ability and hotkey @started(21-09-26 18:44) @done(21-09-29 20:16) @lasted(3d1h32m7s)
+✔ Implement Zoom function on mouse wheel @done(21-10-02 16:45)
 
 Prio from top to bottom
+☐ Implement mini map
+☐ Investigate collider data in TILED editor
+☐ Create game server application
+☐ Implement goal collider and scoring events @started(21-10-02 13:32)
 ☐ Make GUI assets @started(21-09-29 20:37)
 ☐ Implement GUI @started(21-09-29 20:37)
-☐ Implement Zoom function on mouse wheel
-☐ Implement mini map
 ☐ Make debugtexts detect off screen position and dynamically repositioning
-☐ Create game server application
 ☐ Refactor application to client application
