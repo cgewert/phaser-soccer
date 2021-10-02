@@ -1,0 +1,44 @@
+<html>
+    <head>
+        <title>Phaser-Soccer Client</title>
+    </head>
+    <body>
+        <div id="disconnect">
+            Disconnect
+        </div>
+        <div id="chat">
+            Chat
+        </div>
+        <style>
+            body, html {
+                height: 100%; 
+                background-color: black;
+            }
+
+            #disconnect, #chat {
+                border-bottom: 1px black solid;
+                height: 50px;
+                background-color: white;
+                text-align: center;
+            }
+        </style>
+        <script src="socket.io.js"></script>
+        <script>
+            const socket = io();
+            socket.on("broadcast", (payload) => {
+                console.log(payload);
+            });
+            const message = 'Hello, Server!';
+            window.addEventListener("click", () => {
+                socket.emit('hello', message);
+            });
+            const disc = document.getElementById("disconnect");
+            disc.addEventListener("click", () => {
+                socket.disconnect();
+            });
+            chat.addEventListener("click", () => {
+                socket.emit('chat', "Hello fellow players!");
+            });
+        </script>
+    </body>
+</html>
