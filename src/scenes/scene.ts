@@ -18,7 +18,7 @@ export class Scene extends PHASER.Scene {
 			},
 		},
 	};
-
+	private miniCam!: PHASER.Cameras.Scene2D.Camera;
 	public camera!: PHASER.Cameras.Scene2D.Camera;
 	private player!: Player;
 	public ball!: Ball;
@@ -29,6 +29,7 @@ export class Scene extends PHASER.Scene {
 	private textRoundTime!: Phaser.GameObjects.Text;
 	private scoreLeft = 0;
 	private scoreRight = 0;
+	private miniCamGraphics!: Phaser.GameObjects.Graphics;
 
 	constructor() {
 		super(Scene.CONFIG);
@@ -115,6 +116,7 @@ export class Scene extends PHASER.Scene {
 				this.camera.zoom, Scene.CAMERA_ZOOM_MINIMUM, Scene.CAMERA_ZOOM_MAXIMUM
 			);
 		});
+		this.createMiniMap();
 		this.createDatGUI();
 		this.input.setDefaultCursor("url(assets/gfx/cursors/default.png), pointer");
 		this.textRoundTime = this.add.text(
@@ -124,6 +126,21 @@ export class Scene extends PHASER.Scene {
 			{ fontFamily: 'WorkSans', fontSize: "42px", stroke: 'black', strokeThickness: 2}
 		).setScrollFactor(0);
 		this.initializeUI();
+	}
+
+	createMiniMap() {
+		this.miniCam = this.cameras.add(0, this.camera.displayHeight - 200)
+			.setName('Minicam')
+			.setSize(300, 200)
+			.setZoom(0.1);
+
+		this.miniCamGraphics = this.add.graphics().setScrollFactor(0);
+		this.miniCamGraphics.x = this.miniCam.x;
+		this.miniCamGraphics.y = this.miniCam.y;
+
+		this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+			this.miniCam.setScroll(pointer.worldX, pointer.worldY);
+		});
 	}
 
 	/*
@@ -183,6 +200,13 @@ export class Scene extends PHASER.Scene {
 			this.input.setDefaultCursor("url(assets/gfx/cursors/scroll_indicator_up.png), pointer");
 			this.updateCursorState();
 		}
+
+		this.miniCamGraphics.clear();
+		this.miniCamGraphics.fillStyle(0x333333, 0.8);
+		let boundsRectWithOffset = this.miniCam.getBounds()
+		boundsRectWithOffset.width = this.miniCam.width + 1;
+		boundsRectWithOffset.height = this.miniCam.height + 1;
+		this.miniCamGraphics.fillRectShape(boundsRectWithOffset);
 
 		if(this.development){
 			this.player.textPositionX = this.player.sprite.x - this.player.textDimensions.width / 2;

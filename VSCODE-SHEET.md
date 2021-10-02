@@ -33,3 +33,9 @@ Zeilen löschen:
 ```shell
 SHIFT + ENTF
 ```
+
+Unbekanntes Symbol erzeugen:
+
+```shell
+STRG + .
+```
